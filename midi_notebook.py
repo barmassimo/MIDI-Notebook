@@ -66,9 +66,9 @@ class MidiNotebookContext(object):
         midi_messages_controller=[]
         
         for message in self.messages_captured:
-            if len(message)!=2:
-                print "wrong length" + str(message)
-                exit(0)
+            if len(message)!=4:
+                print "wrong length: skipping " + str(message)
+                continue
 
             total_time += float(message[3])
             total_time_adjusted = total_time * float(self.bpm) / float(60) # seconds -> beat conversion
@@ -78,6 +78,10 @@ class MidiNotebookContext(object):
                 midi_messages_off.append({'note': message[1], 'velocity': message[2], 'time': total_time_adjusted})
             elif message[0]==176: # pedal
                 midi_messages_controller.append({'type': message[1], 'value': message[2], 'time': total_time_adjusted})
+            else:
+                print "unknown message: skipping " + str(message)
+                continue
+                
             
         for m_on in midi_messages_on:
             for m_off in midi_messages_off:
