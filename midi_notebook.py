@@ -4,7 +4,7 @@ import time
 import datetime
 import signal
 
-from midiutil.MidiFile import MIDIFile
+from midiutil.MidiFile3 import MIDIFile
 import rtmidi_python as rtmidi
 
 # CONFIGURATION
