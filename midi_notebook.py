@@ -52,22 +52,21 @@ class MidiNotebookContext(object):
         
         MyMIDI = MIDIFile(2)
         track = 0
-        track_time = 0
 
-        MyMIDI.addTrackName(track,track_time,"Tempo track")
-        MyMIDI.addTempo(track,track_time,self.bpm)
+        MyMIDI.addTrackName(track, 0, "Tempo track")
+        MyMIDI.addTempo(track, 0, self.bpm)
         
         track += 1
-        MyMIDI.addTrackName(track,track_time,"Song track")
+        MyMIDI.addTrackName(track, 0, "Song track")
         
         total_time=0
         midi_messages_on=[]
         midi_messages_off=[]
         midi_messages_controller=[]
-        
+             
         for message in self.messages_captured:
             if len(message)!=4:
-                print "wrong length: skipping " + str(message)
+                print("wrong length: skipping " + str(message))
                 continue
 
             total_time += float(message[3])
@@ -79,20 +78,19 @@ class MidiNotebookContext(object):
             elif message[0]==176: # pedal
                 midi_messages_controller.append({'type': message[1], 'value': message[2], 'time': total_time_adjusted})
             else:
-                print "unknown message: skipping " + str(message)
+                print("unknown message: skipping " + str(message))
                 continue
                 
             
         for m_on in midi_messages_on:
             for m_off in midi_messages_off:
-                if m_off['note']==m_on['note']:
+                if m_off['note']==m_on['note'] and m_off['time'] > m_on['time']:
                     m_on['duration'] = m_off['time'] - m_on['time']
                     m_off['note']=-1
                     break
             else:
-                m_on['duration'] = float(100) # suspended
+                m_on['duration'] = float(15)* float(self.bpm) / float(60) # suspended
 
-        
         channel = 0
         
         for m in midi_messages_on:
