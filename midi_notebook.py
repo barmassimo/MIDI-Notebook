@@ -3,6 +3,7 @@ import sys
 import time
 import datetime
 import signal
+import os
 
 from midiutil.MidiFile3 import MIDIFile
 import rtmidi_python as rtmidi
@@ -110,7 +111,7 @@ class MidiNotebookContext(object):
 def signal_handler(signal, frame):
     MidiNotebookContext().save_midi_file()
     print('Bye.')
-    exit(0)
+    sys.exit(0)
 
 def callback(message, time_stamp):
     MidiNotebookContext().capture_message(message, time_stamp)
@@ -124,6 +125,10 @@ for arg in sys.argv[1:]:
 
 print("MIDI IN PORTS:")
 midi_in = rtmidi.MidiIn()
+
+if len(midi_in.ports)==1:
+    input_port=0
+
 for n, port_name in enumerate(midi_in.ports):
     selected = ""
     if n==input_port: selected = " [SELECTED] "
@@ -132,9 +137,9 @@ for n, port_name in enumerate(midi_in.ports):
 print("")
 
 if input_port is None:
-    print("Usage: {0} -pN: select the Nth midi input port.".format(sys.argv[0]))
-    print("Example: {} -p2".format(sys.argv[0]))
-    exit(0)
+    print("There are more than one midi input port in your system:\nyou must provide a PORT number.")
+    print("Usage: {0} -pPORT".format(os.path.basename(sys.argv[0])))
+    sys.exit(0)
 
 midi_in.callback = callback
 midi_in.open_port(input_port)

@@ -1,1 +1,1 @@
-c:\Python27\python.exe midi_notebook.py -p3
+c:\Python27\python.exe midi_notebook.py
