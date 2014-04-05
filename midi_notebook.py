@@ -24,8 +24,7 @@ class MetaSingleton(type):
             self.instance = super(MetaSingleton, self).__call__(*args, **kw)
         return self.instance
 
-class MidiNotebookContext(object):
-    __metaclass__ = MetaSingleton
+class MidiNotebookContext(metaclass = MetaSingleton):
     
     def __init__(self, configuration):
         
