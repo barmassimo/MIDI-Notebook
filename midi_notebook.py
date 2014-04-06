@@ -20,28 +20,19 @@ def signal_handler(signal, frame):
     print('Bye.')
     sys.exit(0) 
 
-def init_app():
-    MidiNotebookContext(configuration) # init
+def main():
+    context = MidiNotebookContext(configuration) # init
 
     input_port = None
     for arg in sys.argv[1:]:
         if arg.startswith("-in"): input_port = int(arg[3:])
             
-    MidiNotebookContext().print_info(input_port)
-        
-    MidiNotebookContext().start_recording(input_port)
+    context.print_info(input_port)
+    context.start_recording(input_port)
     
     signal.signal(signal.SIGINT, signal_handler)
     print('Press Ctrl+C to save and exit.')
+    
+    context.start_main_loop()
 
-def main_app():
-    while (True):
-        try:
-            time.sleep(1)
-            if (MidiNotebookContext().is_time_to_save()): 
-                MidiNotebookContext().save_midi_file()
-        except IOError: 
-            pass
-
-init_app()
-main_app()
+main()

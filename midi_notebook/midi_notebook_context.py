@@ -34,7 +34,7 @@ class MidiNotebookContext(metaclass = MetaSingleton):
             
     def print_info(self, input_port):
         self.write_message("MIDI IN PORTS:")
-        for n, port_name in enumerate(MidiNotebookContext().get_input_ports()):
+        for n, port_name in enumerate(self.get_input_ports()):
             selected = ""
             if n==input_port: selected = " [SELECTED] "
             self.write_message("({0}) {1}{2}".format(n, port_name, selected))    
@@ -132,4 +132,16 @@ class MidiNotebookContext(metaclass = MetaSingleton):
         MyMIDI.writeFile(binfile)
         binfile.close()
         self.messages_captured=[]
-        self.write_message("Saved.")        
+        self.write_message("Saved.")      
+
+    def start_main_loop(self):
+        while (True):
+            try:
+                time.sleep(1)
+                if (self.is_time_to_save()): 
+                    self.save_midi_file()
+            except IOError: 
+                pass
+                
+     
+            
