@@ -35,7 +35,26 @@ class MidiNotebookContext(metaclass = MetaSingleton):
         
         time.clock()
         self.last_event = time.clock()
-        self.messages_captured=[]
+        self.messages_captured = []
+        self.midi_in_ports = []
+        
+    def get_input_ports(self):
+        midi_in = rtmidi.MidiIn()
+        ports = midi_in.ports
+        return ports
+        
+    def start_recording(self, input_port):
+        if not input_port is None:
+            self._start_recording_from_port(input_port)
+        else:
+            for n in range(len(self.get_input_ports())):
+                self._start_recording_from_port(n)
+        
+    def _start_recording_from_port(self, input_port):
+        midi_in=rtmidi.MidiIn()
+        midi_in.callback = self.capture_message
+        midi_in.open_port(input_port)
+        self.midi_in_ports.append(midi_in)
         
     def capture_message(self, message, time_stamp):
         self.last_event=time.clock()
@@ -111,45 +130,43 @@ def signal_handler(signal, frame):
     MidiNotebookContext().save_midi_file()
     print('Bye.')
     sys.exit(0)
-
-def callback(message, time_stamp):
-    MidiNotebookContext().capture_message(message, time_stamp)
     
-MidiNotebookContext(configuration) # init
+def print_info(input_port):
+    print("MIDI IN PORTS:")
+    for n, port_name in enumerate(MidiNotebookContext().get_input_ports()):
+        selected = ""
+        if n==input_port: selected = " [SELECTED] "
+        print("({0}) {1}{2}".format(n, port_name, selected))    
+        
+    print("")
 
-input_port = None
-for arg in sys.argv[1:]:
-    if arg.startswith("-p"):
-        input_port = int(arg[2:])
+    if input_port is None:
+        print("Usage: {0} [-inPORT]".format(os.path.basename(sys.argv[0])))
+        print("Recording from ALL midi ports.")
+        print("If you want to record from only one port, you can provide a PORT number.")    
 
-print("MIDI IN PORTS:")
-midi_in = rtmidi.MidiIn()
+def init_app():
+    MidiNotebookContext(configuration) # init
 
-if len(midi_in.ports)==1:
-    input_port=0
-
-for n, port_name in enumerate(midi_in.ports):
-    selected = ""
-    if n==input_port: selected = " [SELECTED] "
-    print("({0}) {1}{2}".format(n, port_name, selected))    
+    input_port = None
+    for arg in sys.argv[1:]:
+        if arg.startswith("-in"): input_port = int(arg[3:])
+            
+    print_info(input_port)
+        
+    MidiNotebookContext().start_recording(input_port)
     
-print("")
+    signal.signal(signal.SIGINT, signal_handler)
+    print('Press Ctrl+C to save and exit.')
 
-if input_port is None:
-    print("There are more than one midi input port in your system:\nyou must provide a PORT number.")
-    print("Usage: {0} -pPORT".format(os.path.basename(sys.argv[0])))
-    sys.exit(0)
+def main_app():
+    while (True):
+        try:
+            time.sleep(1)
+            if (MidiNotebookContext().is_time_to_save()): 
+                MidiNotebookContext().save_midi_file()
+        except IOError: 
+            pass
 
-midi_in.callback = callback
-midi_in.open_port(input_port)
-
-signal.signal(signal.SIGINT, signal_handler)
-print('Press Ctrl+C to save and exit.')
-while (True):
-    try:
-        time.sleep(1)
-        if (MidiNotebookContext().is_time_to_save()): 
-            MidiNotebookContext().save_midi_file()
-    except IOError: 
-        pass
-
+init_app()
+main_app()
