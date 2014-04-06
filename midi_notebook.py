@@ -26,9 +26,11 @@ def main():
     input_port = None
     for arg in sys.argv[1:]:
         if arg.startswith("-in"): input_port = int(arg[3:])
-            
-    context.print_info(input_port)
-    context.start_recording(input_port)
+    
+    context.input_port = input_port
+    
+    context.print_info()
+    context.start_recording()
     
     signal.signal(signal.SIGINT, signal_handler)
     print('Press Ctrl+C to save and exit.')

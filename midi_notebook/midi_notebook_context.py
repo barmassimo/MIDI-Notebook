@@ -27,21 +27,22 @@ class MidiNotebookContext(metaclass = MetaSingleton):
         self.last_event = time.clock()
         self.messages_captured = []
         self.midi_in_ports = []
+        self.input_port = None
         
     def write_message(self, message):
         if (not self.write_message_function is None):
             self.write_message_function(message)
             
-    def print_info(self, input_port):
+    def print_info(self):
         self.write_message("MIDI IN PORTS:")
         for n, port_name in enumerate(self.get_input_ports()):
             selected = ""
-            if n==input_port: selected = " [SELECTED] "
+            if n==self.input_port: selected = " [SELECTED] "
             self.write_message("({0}) {1}{2}".format(n, port_name, selected))    
             
         self.write_message("")
 
-        if input_port is None:
+        if self.input_port is None:
             self.write_message("Usage: {0} [-inPORT]".format(os.path.basename(sys.argv[0])))
             self.write_message("Recording from ALL midi ports.")
             self.write_message("If you want to record from only one port, you can provide a PORT number.")   
@@ -51,9 +52,9 @@ class MidiNotebookContext(metaclass = MetaSingleton):
         ports = midi_in.ports
         return ports
         
-    def start_recording(self, input_port):
-        if not input_port is None:
-            self._start_recording_from_port(input_port)
+    def start_recording(self):
+        if not self.input_port is None:
+            self._start_recording_from_port(self.input_port)
         else:
             for n in range(len(self.get_input_ports())):
                 self._start_recording_from_port(n)

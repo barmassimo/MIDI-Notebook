@@ -53,18 +53,28 @@ class Application():
        
         
 class Recorder(threading.Thread):
+    def __init__(self, context):
+        super().__init__()
+        self.context = context
+        
     def run(self):
-        context = MidiNotebookContext()
-        context.print_info(None)
-        context.start_recording(None)
-        context.start_main_loop()
+        self.context.print_info()
+        self.context.start_recording()
+        self.context.start_main_loop()
 
 def main():
     app = Application()
     configuration['write_message_function'] = app.write_txt
     
-    MidiNotebookContext(configuration) # init
-    recorder = Recorder()
+    context = MidiNotebookContext(configuration) # init
+    
+    input_port = None
+    for arg in sys.argv[1:]:
+        if arg.startswith("-in"): input_port = int(arg[3:])
+    
+    context.input_port = input_port
+    
+    recorder = Recorder(context)
     recorder.daemon = True 
     recorder.start()
     app.root.mainloop()
