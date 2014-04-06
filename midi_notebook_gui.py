@@ -9,10 +9,11 @@ from  midi_notebook.midi_notebook_context import MidiNotebookContext
 
 # CONFIGURATION
 configuration = { 
-    'long_pause': 30, # save automatically a new file if there are not new events for 30 seconds
+    'long_pause': None, # save automatically a new file if there are not new events for N seconds (None  = no autosave)
     'midi_file_name': 'midi_notebook_{0}.mid', # {0} = datetime
     'bpm': 120, # beats per minute
     'monitor': True, # print input midi messages
+    'loop_toggle_message_signature': [176, 21, 127],
 }
 # /CONFIGURATION  
 
@@ -30,8 +31,11 @@ class Application():
         self.txt = tkinter.Text(self.root, height='20')
         self.txt.pack(fill=tkinter.BOTH)
         self.save_button = ttk.Button(self.root, command=self.save, text='Save').pack(anchor=tkinter.W)
+        self.loop_button = ttk.Button(self.root, command=self.loop, text='Loop 1').pack(anchor=tkinter.W)
+        self.context = None
+        
         self.my_app_loop()
-    
+        
     def my_app_loop(self):
         self.update_lock.acquire()
         while(len(self.update_messages)>0):
@@ -42,9 +46,11 @@ class Application():
         self.update_lock.release()
         self.root.after(100,self.my_app_loop)
 
-        
     def save(self):
-        MidiNotebookContext().save_midi_file()
+        self.context.save_midi_file()
+        
+    def loop(self):
+        self.context.toggle_loop()
         
     def write_txt(self, txt):
         self.update_lock.acquire()
@@ -64,22 +70,21 @@ class Recorder(threading.Thread):
 
 def main():
     app = Application()
-    configuration['write_message_function'] = app.write_txt
     
+    configuration['write_message_function'] = app.write_txt
     context = MidiNotebookContext(configuration) # init
+    
+    app.context = context
     
     input_port = None
     for arg in sys.argv[1:]:
-        if arg.startswith("-in"): input_port = int(arg[3:])
-    
-    context.input_port = input_port
+        if arg.startswith("-in"): context.input_port = int(arg[3:])
+        if arg.startswith("-out"): context.output_port = int(arg[4:])
     
     recorder = Recorder(context)
     recorder.daemon = True 
     recorder.start()
     app.root.mainloop()
-    
-
 
 main()
 

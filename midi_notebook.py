@@ -7,11 +7,12 @@ from  midi_notebook.midi_notebook_context import MidiNotebookContext
 
 # CONFIGURATION
 configuration = { 
-    'long_pause': 30, # save automatically a new file if there are not new events for 30 seconds
+    'long_pause': 30, # save automatically a new file if there are not new events for N seconds (None  = no autosave)
     'midi_file_name': 'midi_notebook_{0}.mid', # {0} = datetime
     'bpm': 120, # beats per minute
     'monitor': True, # print input midi messages
-    'write_message_function': print # loggin function
+    'write_message_function': print, # loggin function
+    'loop_toggle_message_signature': [176, 21, 127],
 }
 # /CONFIGURATION
 
