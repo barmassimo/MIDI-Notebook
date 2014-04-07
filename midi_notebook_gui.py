@@ -13,7 +13,7 @@ configuration = {
     'long_pause': None, # save automatically a new file if there are not new events for N seconds (None  = no autosave)
     'midi_file_name': 'midi_notebook_{0}.mid', # {0} = datetime
     'bpm': 120, # beats per minute
-    'monitor': True, # print input midi messages
+    'monitor': False, # print input midi messages if True
     'loop_toggle_message_signature': [[176, 21, 127], [176, 22, 127], [176, 23, 127], [176, 24, 127],], # signatures for loop control special messages
 }
 # /CONFIGURATION  
@@ -37,17 +37,26 @@ class Application():
  
         self.root.rowconfigure(0, weight=1)
         self.root.rowconfigure(1, weight=0, minsize=120)
+        self.root.rowconfigure(2, weight=0, minsize = 2)
         
         self.txt = tkinter.Text(self.root, height='20')
         self.txt.grid(row=0, column=0, columnspan=self.context.n_loops+1, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S)
         
         self.loop_buttons = []
+        self.loop_status_lbl = []
         for n in range(0, self.context.n_loops):
             loopN = functools.partial(self.loop, n)    
-            btn = tkinter.Button(self.root, command=loopN, text='Loop '+str(n))
+            
+            btn = tkinter.Button(self.root, command=loopN, text='Loop '+str(n)+("\n- master -" if n==0 else "") )
             self.loop_buttons.append(btn)
-            btn.config(font='bold' )
+            btn.config(font='bold')
             btn.grid(row=1, column=n, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S )
+            
+            var = tkinter.StringVar()
+            lbl = tkinter.Label(self.root, height='1', width=1, textvariable=var)
+            self.loop_status_lbl.append(var)
+            lbl.grid(row=2, column=n, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S )
+            
             self.root.columnconfigure(n, weight=1)
             
         n += 1
@@ -57,13 +66,19 @@ class Application():
         self.root.columnconfigure(n, weight=1)
 
     def midi_message_loop(self):
+    
         self.update_lock.acquire()
         while(len(self.update_messages)>0):
             msg = self.update_messages.pop(0)
             self.txt.insert(tkinter.INSERT, msg)
             self.txt.see(tkinter.END)
-            self.root.update()
         self.update_lock.release()
+        
+        for n, l in enumerate(self.context.loops):
+            self.loop_status_lbl[n].set(l.status)
+        
+        self.root.update()
+        
         self.root.after(200, self.midi_message_loop)
 
     def save(self):

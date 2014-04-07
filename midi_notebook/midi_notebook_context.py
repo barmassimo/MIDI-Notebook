@@ -16,7 +16,19 @@ class Loop():
         self.is_recording = False
         self.start_recording_time = None
         self.messages_captured = []
-        self.duration = None        
+        self.duration = None    
+        self.sync_delay = None
+        
+    @property
+    def status(self):
+        if self.is_recording: 
+            return "recording"
+        elif self.is_playback:
+            return "play - {0:.1f}sec".format(self.duration)
+        elif not self.duration is None:
+            return "stop - {0:.1f}sec".format(self.duration)
+        else:
+            return ""
     
     @property
     def is_clean(self):
@@ -24,7 +36,7 @@ class Loop():
     
     @property
     def is_playable(self):
-        return len(self.messages_captured)>=2
+        return len(self.messages_captured) >= 2
         
     def start_recording(self):
         self.is_playback = False
@@ -32,27 +44,40 @@ class Loop():
         self.start_recording_time = None
         self.messages_captured = []
         self.duration = None
+        self.sync_delay = None
         
     def stop_recording(self):
-        self.is_playback = False
+        if not self.is_recording: return
         self.is_recording = False
         self.duration = None
-        if not self.start_recording_time is None: self.duration = time.clock() - self.start_recording_time
+        if not self.start_recording_time is None: 
+            self.duration = time.clock() - self.start_recording_time
 
 class LoopPlayer(threading.Thread):
     def __init__(self, context, n):
         super().__init__()
         self.context = context
         self.loop = context.loops[n]
-        self.loop_index = n
+        self.is_master_loop = n == 0
+        self.force_exit_activated = False
         
     def run(self):
-        loop_messages_captured = self.loop.messages_captured[:] # avoid concurrency
-        loop_duration = self.loop.duration # avoid concurrency
+    
+        # avoid concurrency
+        loop_messages_captured = self.loop.messages_captured[:] 
+        loop_duration = self.loop.duration
+        loop_sync_delay = self.loop.sync_delay
         
-        if len(loop_messages_captured)<2:
+        if len(loop_messages_captured) < 2:
             self.context.write_message("NOTHING TO PLAY. :-(");
             return
+            
+        if loop_sync_delay is None or not self.context.is_sync_active:
+            print("clearing first pause")
+            loop_messages_captured[0][-1] = 0
+        else:
+            print("setting first pause to "+str(loop_sync_delay))
+            loop_messages_captured[0][-1] = loop_sync_delay
         
         if self.context.midi_out is None:
             self.context.midi_out = rtmidi.MidiOut()
@@ -61,26 +86,44 @@ class LoopPlayer(threading.Thread):
         first_event_time = float(loop_messages_captured[0][-1])
         
         while (True):
-            first = True
-            elapsed_time=0
+            self.context.loop_sync.acquire()
+            if (self.is_master_loop):
+                self.context.last_loop_sync = time.clock()
+                self.context.loop_sync.notify_all()
+            else:
+                print ("slave loop")
+                print ("checking last_loop_sync:"+str(self.context.last_loop_sync))
+                print ("sync active:"+str(self.context.is_sync_active))
+                if self.context.is_sync_active:
+                    print ("waiting...")
+                    self.context.loop_sync.wait()
+                    print ("acquired")
+                else:
+                    print ("waiting skipped")
+            self.context.loop_sync.release()
+                
             total_time = sum(float(m[-1]) for m in loop_messages_captured[1:])
             
             for m in loop_messages_captured:
-                
-                if first: 
-                    pause = 0
-                    first = False
-                else:
-                    pause = float(m[-1])
                     
                 if not self.loop.is_playback: 
+                    if not self.is_master_loop: return # master loop is never ended, only muted
+                
+                
+                if self.force_exit_activated: 
+                    print ("force exiting")
                     return
                     
-                time.sleep(pause)
-                self.context.midi_out.send_message(m[:-1])
-                self.context.capture_message(m[:-1], float(m[-1]), loopback=True) # loopback!
+                time.sleep(float(m[-1]))
+                
+                if self.loop.is_playback:
+                    self.context.midi_out.send_message(m[:-1])
+                    self.context.capture_message(m[:-1], float(m[-1]), loopback=True) # loopback!
             
             time.sleep(loop_duration - total_time)
+            
+    def force_exit(self):
+        self.force_exit_activated = True
                 
 class MetaSingleton(type):
     instance = None
@@ -90,6 +133,11 @@ class MetaSingleton(type):
         return self.instance
 
 class MidiNotebookContext(metaclass = MetaSingleton):
+
+    class MidiEventTypes():
+        NOTE_ON = 144
+        NOTE_OFF = 128
+        CONTROL_CHANGE = 176
     
     def __init__(self, configuration):
         
@@ -111,6 +159,14 @@ class MidiNotebookContext(metaclass = MetaSingleton):
         self.n_loops = 4
         self.loops = [Loop() for n in range(self.n_loops)]
         self.last_toggle_loop = [0 for n in range(self.n_loops)]
+        
+        self.loop_sync = threading.Condition()        
+        self.last_loop_sync = None
+        self.loop_threads = [None for n in range(self.n_loops)]
+        
+    @property
+    def is_sync_active(self):
+        return self.last_loop_sync is not None
                 
     def write_message(self, message):
         if (not self.write_message_function is None):
@@ -168,21 +224,41 @@ class MidiNotebookContext(metaclass = MetaSingleton):
         self.write_message("START RECORDING LOOP {0}.".format(n))
         
         # one loop a time
-        for n2 in range(self.n_loops):
-            self.loops[n].stop_recording()
-            
+        for l in self.loops:
+            l.stop_recording()
+                
+        self.loops[n].is_playback = False
+        if not self.loop_threads[n] is None: self.loop_threads[n].force_exit()
+        
         self.loops[n].start_recording()
+            
         
     def stop_loop_recording(self, n):
         self.write_message("STOP RECORDING LOOP {0}.".format(n))
         self.loops[n].stop_recording()
+        
 
     def play_loop(self, n):        
         self.write_message("PLAY LOOP {0}.".format(n));
+        
+        non_master_loop_in_play_count = len ([l for l in self.loops[1:] if l.is_playback])
+        
         self.loops[n].is_playback = True
-        player = LoopPlayer(self, n)
-        player.daemon = True 
-        player.start()
+        
+        # master loop is reset only if slave loops are not playing
+        print ("non_master_loop_in_play_count: "+str(non_master_loop_in_play_count))
+        need_resume_master_loop = (n == 0 and non_master_loop_in_play_count > 0 and not self.loop_threads[n] is None)
+        print ("need_resume_master_loop: "+str(need_resume_master_loop))
+        if need_resume_master_loop:
+            print ("RESUMING")
+            pass # is_playback = True is all is needed
+        else: # master loop and other loops in play: resume
+            print ("RESET!!!")
+            player = LoopPlayer(self, n)
+            player.daemon = True 
+            player.start()
+            if not self.loop_threads[n] is None: self.loop_threads[n].force_exit()
+            self.loop_threads[n] = player
         
     def stop_loop(self, n):
         self.write_message("STOP LOOP {0}.".format(n));
@@ -191,6 +267,8 @@ class MidiNotebookContext(metaclass = MetaSingleton):
     def clean_loop(self, n):
         self.write_message("CLEAN LOOP {0}.".format(n))
         self.loops[n].clean()
+        if n == 0: 
+            self.last_loop_sync = None # stop sync
         
     def toggle_loop(self, n):
         if time.clock() - self.last_toggle_loop[n] < 0.5: # double tap/click
@@ -242,8 +320,12 @@ class MidiNotebookContext(metaclass = MetaSingleton):
         
     def handle_message_loop(self, message, n):
         if self.loops[n].start_recording_time == None:
-            if message[0]!=144: return # note on is the trigger
+            if message[0] != MidiNotebookContext.MidiEventTypes.NOTE_ON: return # note on is the trigger
             self.loops[n].start_recording_time = self.last_event
+            if (self.is_sync_active and n > 0):
+                print("set sync_delay for slave loop")
+                self.loops[n].sync_delay = self.last_event - self.last_loop_sync
+                
         self.loops[n].messages_captured.append(message)
         
     def is_time_to_save(self):
@@ -274,11 +356,11 @@ class MidiNotebookContext(metaclass = MetaSingleton):
 
             total_time += float(message[3])
             total_time_adjusted = total_time * float(self.bpm) / float(60) # seconds -> beat conversion
-            if message[0]==144: # note on
+            if message[0] == MidiNotebookContext.MidiEventTypes.NOTE_ON:
                 midi_messages_on.append({'note': message[1], 'velocity': message[2], 'time': total_time_adjusted})
-            elif message[0]==128: # note off
+            elif message[0] == MidiNotebookContext.MidiEventTypes.NOTE_OFF:
                 midi_messages_off.append({'note': message[1], 'velocity': message[2], 'time': total_time_adjusted})
-            elif message[0]==176: # pedal
+            elif message[0] == MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE:
                 midi_messages_controller.append({'type': message[1], 'value': message[2], 'time': total_time_adjusted})
             else:
                 self.write_message("unknown message: skipping " + str(message))
