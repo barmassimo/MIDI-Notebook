@@ -80,8 +80,6 @@ class LoopPlayer(threading.Thread):
         if self.context.midi_out is None:
             self.context.midi_out = rtmidi.MidiOut()
             self.context.midi_out.open_port(self.context.output_port)
-            
-        first_event_time = float(loop_messages_captured[0][-1])
         
         while (True):
             self.context.loop_sync.acquire()
