@@ -73,10 +73,8 @@ class LoopPlayer(threading.Thread):
             return
             
         if loop_sync_delay is None or not self.context.is_sync_active:
-            print("clearing first pause")
             loop_messages_captured[0][-1] = 0
         else:
-            print("setting first pause to "+str(loop_sync_delay))
             loop_messages_captured[0][-1] = loop_sync_delay
         
         if self.context.midi_out is None:
@@ -91,15 +89,9 @@ class LoopPlayer(threading.Thread):
                 self.context.last_loop_sync = time.clock()
                 self.context.loop_sync.notify_all()
             else:
-                print ("slave loop")
-                print ("checking last_loop_sync:"+str(self.context.last_loop_sync))
-                print ("sync active:"+str(self.context.is_sync_active))
                 if self.context.is_sync_active:
-                    print ("waiting...")
                     self.context.loop_sync.wait()
-                    print ("acquired")
-                else:
-                    print ("waiting skipped")
+                    
             self.context.loop_sync.release()
                 
             total_time = sum(float(m[-1]) for m in loop_messages_captured[1:])
@@ -111,7 +103,6 @@ class LoopPlayer(threading.Thread):
                 
                 
                 if self.force_exit_activated: 
-                    print ("force exiting")
                     return
                     
                 time.sleep(float(m[-1]))
@@ -246,14 +237,8 @@ class MidiNotebookContext(metaclass = MetaSingleton):
         self.loops[n].is_playback = True
         
         # master loop is reset only if slave loops are not playing
-        print ("non_master_loop_in_play_count: "+str(non_master_loop_in_play_count))
         need_resume_master_loop = (n == 0 and non_master_loop_in_play_count > 0 and not self.loop_threads[n] is None)
-        print ("need_resume_master_loop: "+str(need_resume_master_loop))
-        if need_resume_master_loop:
-            print ("RESUMING")
-            pass # is_playback = True is all is needed
-        else: # master loop and other loops in play: resume
-            print ("RESET!!!")
+        if not need_resume_master_loop:
             player = LoopPlayer(self, n)
             player.daemon = True 
             player.start()
@@ -323,7 +308,6 @@ class MidiNotebookContext(metaclass = MetaSingleton):
             if message[0] != MidiNotebookContext.MidiEventTypes.NOTE_ON: return # note on is the trigger
             self.loops[n].start_recording_time = self.last_event
             if (self.is_sync_active and n > 0):
-                print("set sync_delay for slave loop")
                 self.loops[n].sync_delay = self.last_event - self.last_loop_sync
                 
         self.loops[n].messages_captured.append(message)
