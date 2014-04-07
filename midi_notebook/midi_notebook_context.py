@@ -7,7 +7,6 @@ import sys
 import rtmidi_python as rtmidi
 from midiutil.MidiFile3 import MIDIFile
 
-
 class Loop():
     def __init__(self):
         self.clean()
@@ -22,6 +21,10 @@ class Loop():
     @property
     def is_clean(self):
         return self.duration is None
+    
+    @property
+    def is_playable(self):
+        return len(self.messages_captured)>=2
         
     def start_recording(self):
         self.is_playback = False
@@ -37,12 +40,16 @@ class Loop():
         if not self.start_recording_time is None: self.duration = time.clock() - self.start_recording_time
 
 class LoopPlayer(threading.Thread):
-    def __init__(self, context):
+    def __init__(self, context, n):
         super().__init__()
         self.context = context
+        self.loop = context.loops[n]
+        self.loop_index = n
         
     def run(self):
-        loop_messages_captured = self.context.loop.messages_captured[:] # avoid concurrency
+        loop_messages_captured = self.loop.messages_captured[:] # avoid concurrency
+        loop_duration = self.loop.duration # avoid concurrency
+        
         if len(loop_messages_captured)<2:
             self.context.write_message("NOTHING TO PLAY. :-(");
             return
@@ -66,14 +73,14 @@ class LoopPlayer(threading.Thread):
                 else:
                     pause = float(m[-1])
                     
-                if not self.context.loop.is_playback: 
+                if not self.loop.is_playback: 
                     return
                     
                 time.sleep(pause)
                 self.context.midi_out.send_message(m[:-1])
                 self.context.capture_message(m[:-1], float(m[-1]), loopback=True) # loopback!
             
-            time.sleep(self.context.loop.duration-total_time)
+            time.sleep(loop_duration - total_time)
                 
 class MetaSingleton(type):
     instance = None
@@ -100,9 +107,11 @@ class MidiNotebookContext(metaclass = MetaSingleton):
         self.input_port = None
         self.output_port = None
         self.midi_out = None
-        self.loop = Loop()
-        self.last_toggle_loop = 0
         
+        self.n_loops = 4
+        self.loops = [Loop() for n in range(self.n_loops)]
+        self.last_toggle_loop = [0 for n in range(self.n_loops)]
+                
     def write_message(self, message):
         if (not self.write_message_function is None):
             self.write_message_function(message)
@@ -155,61 +164,71 @@ class MidiNotebookContext(metaclass = MetaSingleton):
         midi_in.open_port(input_port)
         self.midi_in_ports.append(midi_in)
         
-    def start_loop_recording(self):
-        self.write_message("START RECORDING.")
-        self.loop.start_recording()
+    def start_loop_recording(self, n):
+        self.write_message("START RECORDING LOOP {0}.".format(n))
         
-    def stop_loop_recording(self):
-        self.write_message("STOP RECORDING.")
-        self.loop.stop_recording()
+        # one loop a time
+        for n2 in range(self.n_loops):
+            self.loops[n].stop_recording()
+            
+        self.loops[n].start_recording()
+        
+    def stop_loop_recording(self, n):
+        self.write_message("STOP RECORDING LOOP {0}.".format(n))
+        self.loops[n].stop_recording()
 
-    def play_loop(self):        
-        self.write_message("PLAY LOOP.");
-        self.loop.is_playback = True
-        player = LoopPlayer(self)
+    def play_loop(self, n):        
+        self.write_message("PLAY LOOP {0}.".format(n));
+        self.loops[n].is_playback = True
+        player = LoopPlayer(self, n)
         player.daemon = True 
         player.start()
         
-    def stop_loop(self):
-        self.write_message("STOP LOOP.");
-        self.loop.is_playback = False
+    def stop_loop(self, n):
+        self.write_message("STOP LOOP {0}.".format(n));
+        self.loops[n].is_playback = False
         
-    def clean_loop(self):
-        self.write_message("CLEAN LOOP.")
-        self.loop.clean()
+    def clean_loop(self, n):
+        self.write_message("CLEAN LOOP {0}.".format(n))
+        self.loops[n].clean()
         
-    def toggle_loop(self):
-        if time.clock() - self.last_toggle_loop < 0.5: # double tap/click
-            self.clean_loop()
-            self.start_loop_recording()
+    def toggle_loop(self, n):
+        if time.clock() - self.last_toggle_loop[n] < 0.5: # double tap/click
+            self.clean_loop(n)
+            self.start_loop_recording(n)
             return 
             
-        self.last_toggle_loop = time.clock()
+        self.last_toggle_loop[n] = time.clock()
         
-        if self.loop.is_playback:
-            self.stop_loop()
-        elif self.loop.is_recording:
-            self.stop_loop_recording()
-            self.play_loop()
-        elif self.loop.is_clean:
-            self.start_loop_recording()
+        if self.loops[n].is_playback:
+            self.stop_loop(n)
+        elif self.loops[n].is_recording:
+            self.stop_loop_recording(n)
+            if self.loops[n].is_playable:
+                self.play_loop(n)
+            else:
+                self.loops[n].clean()
+                self.start_loop_recording(n)
+        elif self.loops[n].is_clean:
+            self.start_loop_recording(n)
         else:
-            self.play_loop()
+            self.play_loop(n)
             
-    def check_loop_toggle_message_signature(self, message):
-        signature = self.loop_toggle_message_signature
+    def check_loop_toggle_message_signature(self, message, n):
+        signature = self.loop_toggle_message_signature[n]
         if len(message)<len(signature): return False
         
-        for n in range(len(signature)):
-            if message[n] != signature[n]: return False
+        for n2 in range(len(signature)):
+            if message[n2] != signature[n2]: return False
             
         return True
         
     def capture_message(self, message, time_stamp, loopback=False):
         
-        if self.check_loop_toggle_message_signature(message):
-            self.toggle_loop()
-            return
+        for n in range(len(self.loop_toggle_message_signature)):
+            if self.check_loop_toggle_message_signature(message, n):
+                self.toggle_loop(n)
+                return
         
         self.last_event=time.clock()
         if len(self.messages_captured) == 0: time_stamp = 0
@@ -217,14 +236,15 @@ class MidiNotebookContext(metaclass = MetaSingleton):
         self.messages_captured.append(message)
         if self.monitor: self.write_message(message)
         
-        if not loopback and self.loop.is_recording: 
-            self.handle_message_loop(message)
+        for n in range(self.n_loops):
+            if not loopback and self.loops[n].is_recording:
+                self.handle_message_loop(message, n)
         
-    def handle_message_loop(self, message):
-        if self.loop.start_recording_time == None:
+    def handle_message_loop(self, message, n):
+        if self.loops[n].start_recording_time == None:
             if message[0]!=144: return # note on is the trigger
-            self.loop.start_recording_time = self.last_event
-        self.loop.messages_captured.append(message)
+            self.loops[n].start_recording_time = self.last_event
+        self.loops[n].messages_captured.append(message)
         
     def is_time_to_save(self):
         if (self.long_pause==None): return False # no autosave
@@ -264,7 +284,6 @@ class MidiNotebookContext(metaclass = MetaSingleton):
                 self.write_message("unknown message: skipping " + str(message))
                 continue
                 
-            
         for m_on in midi_messages_on:
             for m_off in midi_messages_off:
                 if m_off['note']==m_on['note'] and m_off['time'] > m_on['time']:
