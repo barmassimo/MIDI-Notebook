@@ -25,18 +25,43 @@ class Application():
         
         self.root = tkinter.Tk()
         self.root.title('Midi Notebook')
-        #ttk.Frame(self.root, width=500, height=3).pack()
         
-        #ttk.Button(self.root, command=self.insert_txt, text='Click Me').place(x=10, y=10)
         self.txt = tkinter.Text(self.root, height='20')
         self.txt.pack(fill=tkinter.BOTH)
-        self.save_button = ttk.Button(self.root, command=self.save, text='Save').pack(anchor=tkinter.W)
+        
+        #
+        #f = ttk.Frame(self.root).pack(expand=True, fill=tkinter.BOTH)
+        
+        #self.save2_button = ttk.Button(f, command=self.save, text='Save2').pack(anchor=tkinter.W)
+        #self.save3_button = ttk.Button(f, command=self.save, text='Save3').pack(anchor=tkinter.E)
+        #ttk.Button(self.root, command=self.insert_txt, text='Click Me').place(x=10, y=10)
+        
         self.loop_button = ttk.Button(self.root, command=self.loop, text='Loop 1').pack(anchor=tkinter.W)
+        #self.loop_button.size(height=100, width=100)
+   
+        self.save_button = ttk.Button(self.root, command=self.save, text='Save').pack(anchor=tkinter.W)
+        
+        
+        ##
+        f=ttk.Frame(self.root, height=30)#.pack()
+        print ("002")
+        f.grid(row=0)
+        print ("003")
+        b1 = ttk.Button(f, text="Button1").grid(row=0, column=0)
+        print ("004")
+        b2 = ttk.Button(f, text="Button2").grid(row=0, column=1)
+        b3 = ttk.Button(f, text="Button3").grid(row=0, column=2)
+
+        # use grid layout manager
+        #   b1.grid(row=0, column=0, sticky='w')
+        #b2.grid(row=1, column=0, columnspan=3)
+        #b3.grid(row=2, column=0, rowspan=3, sticky='w')
+        ##
+        
         self.context = None
+        self.midi_message_loop()
         
-        self.my_app_loop()
-        
-    def my_app_loop(self):
+    def midi_message_loop(self):
         self.update_lock.acquire()
         while(len(self.update_messages)>0):
             msg = self.update_messages.pop(0)
@@ -44,7 +69,7 @@ class Application():
             self.txt.see(tkinter.END)
             self.root.update()
         self.update_lock.release()
-        self.root.after(100,self.my_app_loop)
+        self.root.after(200, self.midi_message_loop)
 
     def save(self):
         self.context.save_midi_file()
