@@ -157,6 +157,21 @@ class MidiNotebookContext(metaclass = MetaSingleton):
         self.last_loop_sync = None
         self.loop_threads = [None for n in range(self.n_loops)]
         
+    def clean_all(self):
+        self.last_event = time.clock()
+        self.messages_captured = []
+        
+        for n, l in enumerate(self.loops): 
+            self.clean_loop(n)
+            if not self.loop_threads[n] is None: 
+                self.loop_threads[n].force_exit()
+                self.loop_threads[n]=None
+            
+        self.last_toggle_loop = [0 for n in range(self.n_loops)]
+        self.loop_sync = threading.Condition()    
+        self.last_loop_sync = None
+        self.loop_threads = [None for n in range(self.n_loops)]
+        
     @property
     def is_sync_active(self):
         return self.last_loop_sync is not None
@@ -184,7 +199,7 @@ class MidiNotebookContext(metaclass = MetaSingleton):
 
         if self.input_port is None:
             self.write_message("Usage: {0} [-inPORT] [-outPORT]".format(os.path.basename(sys.argv[0])))
-            self.write_message("Recording from ALL midi ports.")
+            self.write_message("Recording from ALL MIDI ports.")
             self.write_message("If you want to record from only one port, you can provide a -inPORT number.")   
             self.write_message("If you want to use playback (loop), use -outPORT number.")   
             

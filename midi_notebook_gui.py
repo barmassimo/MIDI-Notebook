@@ -13,7 +13,7 @@ configuration = {
     'long_pause': None, # save automatically a new file if there are not new events for N seconds (None  = no autosave)
     'midi_file_name': 'midi_notebook_{0}.mid', # {0} = datetime
     'bpm': 120, # beats per minute
-    'monitor': False, # print input midi messages if True
+    'monitor': False, # print input MIDI messages if True
     'loop_toggle_message_signature': [[176, 21, 127], [176, 22, 127], [176, 23, 127], [176, 24, 127],], # signatures for loop control special messages
 }
 # /CONFIGURATION  
@@ -35,12 +35,28 @@ class Application():
         
     def build_gui(self):
         self.root = tkinter.Tk()
-        self.root.title('Midi Notebook')
+        self.root.title('MIDI Notebook')
         self.root.wm_iconbitmap('favicon.ico')
+        
+
+        def hello():
+            print ("hello!")
+
+        # menu
+        self.menubar = tkinter.Menu(self.root)
+        #self.menubar.add_command(label="Quit!", command=self.root.quit)
+        self.tools = tkinter.Menu(self.menubar, tearoff=0)
+        self.tools.add_command(label="Save MIDI file", command=self.save)
+        self.tools.add_command(label="Reset song and loops", command=self.clean_all)
+        self.tools.add_separator()
+        self.tools.add_command(label="Exit", command=self.root.quit)
+        self.menubar.add_cascade(label="Tools", menu=self.tools)
+        self.root.config(menu=self.menubar)        
  
+        #grid
         self.root.rowconfigure(0, weight=1)
         self.root.rowconfigure(1, weight=0, minsize = 2)
-        self.root.rowconfigure(2, weight=0, minsize=120)
+        self.root.rowconfigure(2, weight=0, minsize=140)
         
         self.txt = tkinter.Text(self.root, height='20')
         self.txt.grid(row=0, column=0, columnspan=self.context.n_loops+1, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S)
@@ -61,13 +77,8 @@ class Application():
             lbl.grid(row=1, column=n, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S )
             
             self.root.columnconfigure(n, weight=1)
-            
-        n += 1
-        self.save_button = tkinter.Button(self.root, command=self.save, text='\nSave\n')
-        self.default_button_colors=(self.save_button['fg'], self.save_button['bg'])
-        self.save_button.config(font='bold' )
-        self.save_button.grid(row=2, column=n, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S )
-        self.root.columnconfigure(n, weight=1)
+        
+        self.default_button_colors=(self.loop_buttons[0]['fg'], self.loop_buttons[0]['bg'])
 
     def midi_message_loop(self):
         self.blink = 1 - self.blink
@@ -99,6 +110,9 @@ class Application():
 
     def save(self):
         self.context.save_midi_file()
+        
+    def clean_all(self):
+        self.context.clean_all()        
         
     def loop(self, n):
         self.context.toggle_loop(n)
