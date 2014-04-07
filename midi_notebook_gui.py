@@ -21,6 +21,8 @@ configuration = {
 class Application():
     
     def __init__(self, context):
+        self.blink = 0
+        
         self.context = context
         context.write_message_function = self.write_txt
     
@@ -34,6 +36,7 @@ class Application():
     def build_gui(self):
         self.root = tkinter.Tk()
         self.root.title('Midi Notebook')
+        self.root.wm_iconbitmap('favicon.ico')
  
         self.root.rowconfigure(0, weight=1)
         self.root.rowconfigure(1, weight=0, minsize = 2)
@@ -47,7 +50,7 @@ class Application():
         for n in range(0, self.context.n_loops):
             loopN = functools.partial(self.loop, n)    
             
-            btn = tkinter.Button(self.root, command=loopN, text='Loop '+str(n)+("\n- master -" if n==0 else "") )
+            btn = tkinter.Button(self.root, command=loopN, text='\nLoop '+str(n)+("\n- master -" if n==0 else "\n") )
             self.loop_buttons.append(btn)
             btn.config(font='bold')
             btn.grid(row=2, column=n, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S )
@@ -60,13 +63,17 @@ class Application():
             self.root.columnconfigure(n, weight=1)
             
         n += 1
-        self.save_button = tkinter.Button(self.root, command=self.save, text='Save')
+        self.save_button = tkinter.Button(self.root, command=self.save, text='\nSave\n')
+        self.default_button_colors=(self.save_button['fg'], self.save_button['bg'])
         self.save_button.config(font='bold' )
         self.save_button.grid(row=2, column=n, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S )
         self.root.columnconfigure(n, weight=1)
 
     def midi_message_loop(self):
-    
+        self.blink = 1 - self.blink
+        
+        self.playback_colors = [self.default_button_colors, self.default_button_colors[::-1]]
+        
         self.update_lock.acquire()
         while(len(self.update_messages)>0):
             msg = self.update_messages.pop(0)
@@ -76,10 +83,16 @@ class Application():
         
         for n, l in enumerate(self.context.loops):
             self.loop_status_lbl[n].set(l.status)
-        
+            if l.is_recording:
+                self.loop_buttons[n].configure(fg='white', bg='red')
+            elif l.is_playback:
+                self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'] = self.playback_colors[self.blink][0], self.playback_colors[self.blink][1]
+            else:    
+                self.loop_buttons[n].configure(fg=self.default_button_colors[0], bg=self.default_button_colors[1])
+            
         self.root.update()
         
-        self.root.after(200, self.midi_message_loop)
+        self.root.after(300, self.midi_message_loop)
 
     def save(self):
         self.context.save_midi_file()

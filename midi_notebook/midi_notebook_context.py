@@ -210,8 +210,6 @@ class MidiNotebookContext(metaclass = MetaSingleton):
         self.midi_in_ports.append(midi_in)
         
     def start_loop_recording(self, n):
-        self.write_message("START RECORDING LOOP {0}.".format(n))
-        
         # one loop a time
         for l in self.loops:
             l.stop_recording()
@@ -223,13 +221,10 @@ class MidiNotebookContext(metaclass = MetaSingleton):
             
         
     def stop_loop_recording(self, n):
-        self.write_message("STOP RECORDING LOOP {0}.".format(n))
         self.loops[n].stop_recording()
         
 
     def play_loop(self, n):        
-        self.write_message("PLAY LOOP {0}.".format(n));
-        
         non_master_loop_in_play_count = len ([l for l in self.loops[1:] if l.is_playback])
         
         self.loops[n].is_playback = True
@@ -244,11 +239,9 @@ class MidiNotebookContext(metaclass = MetaSingleton):
             self.loop_threads[n] = player
         
     def stop_loop(self, n):
-        self.write_message("STOP LOOP {0}.".format(n));
         self.loops[n].is_playback = False
         
     def clean_loop(self, n):
-        self.write_message("CLEAN LOOP {0}.".format(n))
         self.loops[n].clean()
         if n == 0: 
             self.last_loop_sync = None # stop sync
