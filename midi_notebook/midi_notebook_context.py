@@ -18,6 +18,7 @@ class Loop():
         self.messages_captured = []
         self.duration = None    
         self.sync_delay = None
+        self.waiting_for_sync = False
         
     @property
     def status(self):
@@ -74,8 +75,10 @@ class LoopPlayer(threading.Thread):
             
         if loop_sync_delay is None or not self.context.is_sync_active:
             loop_messages_captured[0][-1] = 0
+            self.loop.waiting_for_sync = False
         else:
             loop_messages_captured[0][-1] = loop_sync_delay
+            self.loop.waiting_for_sync = True
         
         if self.context.midi_out is None:
             self.context.midi_out = rtmidi.MidiOut()
@@ -89,6 +92,7 @@ class LoopPlayer(threading.Thread):
             else:
                 if self.context.is_sync_active:
                     self.context.loop_sync.wait()
+                    self.loop.waiting_for_sync = False
                     
             self.context.loop_sync.release()
                 

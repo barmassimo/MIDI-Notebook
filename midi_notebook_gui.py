@@ -86,7 +86,10 @@ class Application():
             if l.is_recording:
                 self.loop_buttons[n].configure(fg='white', bg='red')
             elif l.is_playback:
-                self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'] = self.playback_colors[self.blink][0], self.playback_colors[self.blink][1]
+                if l.waiting_for_sync:
+                    self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'] = self.playback_colors[self.blink][0], self.playback_colors[self.blink][1]
+                else:
+                    self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'] = self.default_button_colors[1], self.default_button_colors[0]
             else:    
                 self.loop_buttons[n].configure(fg=self.default_button_colors[0], bg=self.default_button_colors[1])
             
