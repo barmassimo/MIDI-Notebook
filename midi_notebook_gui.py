@@ -36,8 +36,8 @@ class Application():
         self.root.title('Midi Notebook')
  
         self.root.rowconfigure(0, weight=1)
-        self.root.rowconfigure(1, weight=0, minsize=120)
-        self.root.rowconfigure(2, weight=0, minsize = 2)
+        self.root.rowconfigure(1, weight=0, minsize = 2)
+        self.root.rowconfigure(2, weight=0, minsize=120)
         
         self.txt = tkinter.Text(self.root, height='20')
         self.txt.grid(row=0, column=0, columnspan=self.context.n_loops+1, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S)
@@ -50,19 +50,19 @@ class Application():
             btn = tkinter.Button(self.root, command=loopN, text='Loop '+str(n)+("\n- master -" if n==0 else "") )
             self.loop_buttons.append(btn)
             btn.config(font='bold')
-            btn.grid(row=1, column=n, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S )
+            btn.grid(row=2, column=n, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S )
             
             var = tkinter.StringVar()
             lbl = tkinter.Label(self.root, height='1', width=1, textvariable=var)
             self.loop_status_lbl.append(var)
-            lbl.grid(row=2, column=n, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S )
+            lbl.grid(row=1, column=n, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S )
             
             self.root.columnconfigure(n, weight=1)
             
         n += 1
         self.save_button = tkinter.Button(self.root, command=self.save, text='Save')
         self.save_button.config(font='bold' )
-        self.save_button.grid(row=1, column=n, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S )
+        self.save_button.grid(row=2, column=n, sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S )
         self.root.columnconfigure(n, weight=1)
 
     def midi_message_loop(self):
