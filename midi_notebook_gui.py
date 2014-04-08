@@ -94,6 +94,8 @@ class Application():
 
         self.default_button_colors = (self.loop_buttons[0]['fg'],
                                       self.loop_buttons[0]['bg'])
+                                      
+        self.record_button_colors = ('red', 'white')
 
     def midi_message_loop(self):
         self.blink = 1 - self.blink
@@ -101,6 +103,9 @@ class Application():
         self.playback_colors = [self.default_button_colors,
                                 self.default_button_colors[::-1]]
 
+        self.record_colors = [self.record_button_colors,
+                                self.record_button_colors[::-1]]
+                                
         self.update_lock.acquire()
         while len(self.update_messages) > 0:
             msg = self.update_messages.pop(0)
@@ -110,8 +115,14 @@ class Application():
 
         for n, l in enumerate(self.context.loops):
             self.loop_status_lbl[n].set(l.status)
-            if l.is_recording:
-                self.loop_buttons[n].configure(fg='white', bg='red')
+            if l.is_recording and l.start_recording_time is None:
+                self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'], =\
+                        self.record_colors[self.blink][0],\
+                        self.record_colors[self.blink][1]
+            elif l.is_recording:
+                self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'], =\
+                        self.record_button_colors[1],\
+                        self.record_button_colors[0]
             elif l.is_playback:
                 if l.waiting_for_sync:
                     self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'] =\
