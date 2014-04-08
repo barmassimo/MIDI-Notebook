@@ -10,11 +10,12 @@ configuration = {
     # save automatically a new file if there are not new events for N seconds
     # (None  = no autosave)
     'long_pause': 30,
-    'midi_file_name': 'midi_notebook_{0}.mid',  # {0} = datetime
+    'midi_file_name': '../midi/midi_notebook_{0}.mid',  # {0} = datetime
     'bpm': 120,  # beats per minute
     'monitor': True,  # print input midi messages
     'write_message_function': print,  # loggin function
-    'loop_toggle_message_signature': [176, 21, 127],
+    'loop_toggle_message_signature':
+    [[176, 21, 127], [176, 22, 127], [176, 23, 127], [176, 24, 127], ],
 }
 # /CONFIGURATION
 

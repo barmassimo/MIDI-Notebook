@@ -4,7 +4,6 @@ import threading
 import sys
 import functools
 import tkinter
-
 from midi_notebook.midi_notebook_context import MidiNotebookContext
 
 CONFIGURATION = {
@@ -14,7 +13,7 @@ CONFIGURATION = {
     'long_pause': None,
 
     # MIDI export file pattern ({0} = datetime)
-    'midi_file_name': 'midi_notebook_{0}.mid',
+    'midi_file_name': '../midi/midi_notebook_{0}.mid',
 
     # beats per minute
     'bpm': 120,
