@@ -24,12 +24,13 @@ CONFIGURATION = {
 
     # signatures for loop control special messages
     'loop_toggle_message_signature':
-        [[176, 21, 127], [176, 22, 127], [176, 23, 127], [176, 24, 127], ],
+    [[176, 21, 127], [176, 22, 127], [176, 23, 127], [176, 24, 127], ],
 }
 # /CONFIGURATION
 
 
 class Application():
+
     """The ugly tkinter Application"""
 
     def __init__(self, context):
@@ -67,8 +68,8 @@ class Application():
         self.root.rowconfigure(2, weight=0, minsize=140)
 
         self.txt = tkinter.Text(self.root, height='20')
-        self.txt.grid(row=0, column=0, columnspan=self.context.n_loops+1,
-                      sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S)
+        self.txt.grid(row=0, column=0, columnspan=self.context.n_loops + 1,
+                      sticky=tkinter.W + tkinter.E + tkinter.N + tkinter.S)
 
         self.loop_buttons = []
         self.loop_status_lbl = []
@@ -80,14 +81,14 @@ class Application():
             self.loop_buttons.append(btn)
             btn.config(font='bold')
             btn.grid(row=2, column=n,
-                     sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S)
+                     sticky=tkinter.W + tkinter.E + tkinter.N + tkinter.S)
 
             var = tkinter.StringVar()
             lbl = tkinter.Label(self.root, height='1',
                                 width=1, textvariable=var)
             self.loop_status_lbl.append(var)
             lbl.grid(row=1, column=n,
-                     sticky=tkinter.W+tkinter.E+tkinter.N+tkinter.S)
+                     sticky=tkinter.W + tkinter.E + tkinter.N + tkinter.S)
 
             self.root.columnconfigure(n, weight=1)
 
@@ -140,7 +141,7 @@ class Application():
 
     def write_txt(self, txt):
         self.update_lock.acquire()
-        self.update_messages.append(str(txt)+'\n')
+        self.update_messages.append(str(txt) + '\n')
         self.update_lock.release()
 
 
