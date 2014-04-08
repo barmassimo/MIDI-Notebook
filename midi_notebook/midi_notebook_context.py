@@ -7,7 +7,6 @@ import sys
 import rtmidi_python as rtmidi
 from midiutil.MidiFile3 import MIDIFile
 
-
 class Loop():
 
     def __init__(self):
@@ -28,7 +27,7 @@ class Loop():
             return "recording"
         elif self.is_playback:
             return "play - {0:.1f}sec".format(self.duration)
-        elif not self.duration is None:
+        elif self.duration is not None:
             return "stop - {0:.1f}sec".format(self.duration)
         else:
             return ""
@@ -54,8 +53,8 @@ class Loop():
             return
         self.is_recording = False
         self.duration = None
-        if not self.start_recording_time is None:
-            self.duration = time.clock() - self.start_recording_time
+        if self.start_recording_time is not None:
+            self.duration = time.time() - self.start_recording_time
 
 
 class LoopPlayer(threading.Thread):
@@ -92,7 +91,7 @@ class LoopPlayer(threading.Thread):
         while (True):
             self.context.loop_sync.acquire()
             if (self.is_master_loop):
-                self.context.last_loop_sync = time.clock()
+                self.context.last_loop_sync = time.time()
                 self.context.loop_sync.notify_all()
             else:
                 if self.context.is_sync_active:
@@ -129,7 +128,7 @@ class MetaSingleton(type):
     instance = None
 
     def __call__(cls, *args, **kw):
-        if cls.instance == None:
+        if cls.instance is None:
             cls.instance = super(MetaSingleton, cls).__call__(*args, **kw)
         return cls.instance
 
@@ -152,8 +151,7 @@ class MidiNotebookContext(metaclass=MetaSingleton):
         self.loop_toggle_message_signature = configuration[
             'loop_toggle_message_signature']
 
-        time.clock()
-        self.last_event = time.clock()
+        self.last_event = time.time()
         self.messages_captured = []
         self.midi_in_ports = []
         self.input_port = None
@@ -169,7 +167,7 @@ class MidiNotebookContext(metaclass=MetaSingleton):
         self.loop_threads = [None for n in range(self.n_loops)]
 
     def clean_all(self):
-        self.last_event = time.clock()
+        self.last_event = time.time()
         self.messages_captured = []
 
         for n, l in enumerate(self.loops):
@@ -188,7 +186,7 @@ class MidiNotebookContext(metaclass=MetaSingleton):
         return self.last_loop_sync is not None
 
     def write_message(self, message):
-        if (not self.write_message_function is None):
+        if (self.write_message_function is not None):
             self.write_message_function(message)
 
     def print_info(self):
@@ -232,7 +230,7 @@ class MidiNotebookContext(metaclass=MetaSingleton):
         return ports
 
     def start_recording(self):
-        if not self.input_port is None:
+        if self.input_port is not None:
             self._start_recording_from_port(self.input_port)
         else:
             for n in range(len(self.get_input_ports())):
@@ -284,12 +282,12 @@ class MidiNotebookContext(metaclass=MetaSingleton):
             self.last_loop_sync = None  # stop sync
 
     def toggle_loop(self, n):
-        if time.clock() - self.last_toggle_loop[n] < 0.5:  # double tap/click
+        if time.time() - self.last_toggle_loop[n] < 0.5:  # double tap/click
             self.clean_loop(n)
             self.start_loop_recording(n)
             return
 
-        self.last_toggle_loop[n] = time.clock()
+        self.last_toggle_loop[n] = time.time()
 
         if self.loops[n].is_playback:
             self.stop_loop(n)
@@ -323,11 +321,16 @@ class MidiNotebookContext(metaclass=MetaSingleton):
                 self.toggle_loop(n)
                 return
 
-        self.last_event = time.clock()
+        # if not loopback:  # adjusting loopback messages timing
+        #    time_stamp = time.time() - self.last_event
+        #    print("ADJUSTED: "+str(time_stamp))
+
+        self.last_event = time.time()
         if len(self.messages_captured) == 0:
             time_stamp = 0
         message.append(time_stamp)
         self.messages_captured.append(message)
+
         if self.monitor:
             self.write_message(message)
 
@@ -336,7 +339,7 @@ class MidiNotebookContext(metaclass=MetaSingleton):
                 self.handle_message_loop(message, n)
 
     def handle_message_loop(self, message, n):
-        if self.loops[n].start_recording_time == None:
+        if self.loops[n].start_recording_time is None:
             if message[0] != MidiNotebookContext.MidiEventTypes.NOTE_ON:
                 return  # note on is the trigger
             self.loops[n].start_recording_time = self.last_event
@@ -347,9 +350,9 @@ class MidiNotebookContext(metaclass=MetaSingleton):
         self.loops[n].messages_captured.append(message)
 
     def is_time_to_save(self):
-        if (self.long_pause == None):
+        if self.long_pause is None:
             return False  # no autosave
-        return time.clock() - self.last_event > self.long_pause
+        return time.time() - self.last_event > self.long_pause
 
     def save_midi_file(self):
         if len(self.messages_captured) == 0:
