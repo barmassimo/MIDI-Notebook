@@ -54,13 +54,16 @@ class Application():
         self.menubar = tkinter.Menu(self.root)
         # self.menubar.add_command(label="Quit!", command=self.root.quit)
         self.tools = tkinter.Menu(self.menubar, tearoff=0)
-        self.tools.add_command(label="Save MIDI file", command=self.save)
+        self.tools.add_command(label="Save MIDI file", command=self.save, accelerator="Ctrl+S")
         self.tools.add_command(label="Reset song and loops",
                                command=self.clean_all)
         self.tools.add_separator()
-        self.tools.add_command(label="Exit", command=self.root.quit)
+        self.tools.add_command(label="Exit", command=self.root.quit, accelerator="Ctrl+Q")
         self.menubar.add_cascade(label="Tools", menu=self.tools)
         self.root.config(menu=self.menubar)
+        
+        self.root.bind_all("<Control-q>", self.quit)
+        self.root.bind_all("<Control-s>", self.save)
 
         # grid
         self.root.rowconfigure(0, weight=1)
@@ -141,8 +144,11 @@ class Application():
 
         self.root.after(300, self.midi_message_loop)
 
-    def save(self):
+    def save(self, unused=None):
         self.context.save_midi_file()
+        
+    def quit(self, unused):
+        self.root.quit()
 
     def clean_all(self):
         self.context.clean_all()
