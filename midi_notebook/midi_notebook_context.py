@@ -321,15 +321,21 @@ class MidiNotebookContext(metaclass=MetaSingleton):
                 self.toggle_loop(n)
                 return
 
-        # if not loopback:  # adjusting loopback messages timing
-        #    time_stamp = time.time() - self.last_event
-        #    print("ADJUSTED: "+str(time_stamp))
+        message_for_midi_export = message[:]
+        
+        # adjusting loopback messages timing
+        time_stamp_for_midi_export = time.time() - self.last_event
 
-        self.last_event = time.time()
         if len(self.messages_captured) == 0:
             time_stamp = 0
+            time_stamp_for_midi_export = 0
+                
+        self.last_event = time.time()
+
         message.append(time_stamp)
-        self.messages_captured.append(message)
+        message_for_midi_export.append(time_stamp_for_midi_export)
+
+        self.messages_captured.append(message_for_midi_export)
 
         if self.monitor:
             self.write_message(message)
