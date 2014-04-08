@@ -47,7 +47,7 @@ class Application():
 
     def build_gui(self):
         self.root = tkinter.Tk()
-        self.root.title('MIDI Notebook')
+        self.root.title('MIDI Notebook & Looper')
         self.root.wm_iconbitmap('favicon.ico')
 
         # menu
@@ -170,7 +170,7 @@ class Recorder(threading.Thread):
 
 def main():
     context = MidiNotebookContext(CONFIGURATION)  # init
-    app = Application(context)
+    APP = Application(context)
 
     for arg in sys.argv[1:]:
         if arg.startswith("-in"):
@@ -181,6 +181,6 @@ def main():
     recorder = Recorder(context)
     recorder.daemon = True
     recorder.start()
-    app.root.mainloop()
+    APP.root.mainloop()
 
 main()
