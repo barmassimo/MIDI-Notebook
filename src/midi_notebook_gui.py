@@ -55,8 +55,20 @@ class Application():
         # self.menubar.add_command(label="Quit!", command=self.root.quit)
         self.tools = tkinter.Menu(self.menubar, tearoff=0)
         self.tools.add_command(label="Save MIDI file", command=self.save, accelerator="Ctrl+S")
+        
+        ports = tkinter.Menu(self.tools, tearoff=0)
+        self.output_port = tkinter.IntVar()
+        self.output_port.set(self.context.output_port) 
+        
+        for n, port_name in enumerate(self.context.get_output_ports()):
+            ports.add_radiobutton(label=port_name, variable=self.output_port, value=n, command=functools.partial(self.set_output_port, value=n))
+     
+        
+        self.tools.add_cascade(label="Select MIDI out port", menu=ports)
+                               
+                               
         self.tools.add_command(label="Reset song and loops",
-                               command=self.clean_all)
+                               command=self.clean_all)              
         self.tools.add_separator()
         self.tools.add_command(label="Exit", command=self.root.quit, accelerator="Ctrl+Q")
         self.menubar.add_cascade(label="Tools", menu=self.tools)
@@ -155,6 +167,9 @@ class Application():
 
     def loop(self, n):
         self.context.toggle_loop(n)
+        
+    def set_output_port(self, value):
+        self.context.output_port = value
 
     def write_txt(self, txt):
         self.update_lock.acquire()
@@ -176,13 +191,15 @@ class Recorder(threading.Thread):
 
 def main():
     context = MidiNotebookContext(CONFIGURATION)  # init
-    app = Application(context)
+    
 
     for arg in sys.argv[1:]:
         if arg.startswith("-in"):
             context.input_port = int(arg[3:])
         if arg.startswith("-out"):
             context.output_port = int(arg[4:])
+            
+    app = Application(context)
 
     recorder = Recorder(context)
     recorder.daemon = True

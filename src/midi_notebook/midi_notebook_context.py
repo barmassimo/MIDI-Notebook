@@ -85,6 +85,10 @@ class LoopPlayer(threading.Thread):
             self.loop.waiting_for_sync = True
 
         if self.context.midi_out is None:
+            if self.context.output_port is None:
+                self.context.write_message("Please select a MIDI output port.")
+                return
+                
             self.context.midi_out = rtmidi.MidiOut()
             self.context.midi_out.open_port(self.context.output_port)
 
@@ -155,7 +159,7 @@ class MidiNotebookContext(metaclass=MetaSingleton):
         self.messages_captured = []
         self.midi_in_ports = []
         self.input_port = None
-        self.output_port = None
+        self._output_port = None
         self.midi_out = None
 
         self.n_loops = 4
@@ -228,6 +232,23 @@ class MidiNotebookContext(metaclass=MetaSingleton):
         midi_out = rtmidi.MidiOut()
         ports = midi_out.ports
         return ports
+    
+    @property
+    def output_port(self):
+        return self._output_port
+    
+    @output_port.setter
+    def output_port(self, value):
+        self.write_message("Setting MIDI output port to {0}.".format(value))
+        
+        for n in range(self.n_loops)[::-1]: # ensure loop 0 stopped after the others
+            if self.loops[n].is_playback:
+                self.stop_loop(n)
+                
+        self._output_port = value
+        if self.midi_out is not None:
+            self.midi_out.close_port()
+            self.midi_out = None
 
     def start_recording(self):
         if self.input_port is not None:
