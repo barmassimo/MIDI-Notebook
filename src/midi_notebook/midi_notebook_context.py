@@ -421,9 +421,10 @@ class MidiNotebookContext(metaclass=MetaSingleton):
 
         file_name = self.midi_file_name.format(
             datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+        file_path = os.path.join(os.path.dirname(sys.argv[0]), file_name)
         self.write_message("Saving {0} MIDI messages to {1}...".format(
             len(self.messages_captured), file_name))
-        binfile = open(file_name, 'wb')
+        binfile = open(file_path, 'wb')
         my_midi.writeFile(binfile)
         binfile.close()
         self.messages_captured = []

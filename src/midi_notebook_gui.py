@@ -2,6 +2,7 @@
 
 import threading
 import sys
+import os
 import functools
 import tkinter
 from midi_notebook.midi_notebook_context import MidiNotebookContext
@@ -13,13 +14,13 @@ CONFIGURATION = {
     'long_pause': None,
 
     # MIDI export file pattern ({0} = datetime)
-    'midi_file_name': '../midi/midi_notebook_{0}.mid',
+    'midi_file_name': 'midi_notebook_{0}.mid',
 
-    # beats per minute
+    # beats per minute for MIDI files
     'bpm': 120,
 
     # print input MIDI messages if True
-    'monitor': False,
+    'monitor': True,
 
     # signatures for loop control special messages
     'loop_toggle_message_signature':
@@ -44,10 +45,10 @@ class Application():
         self.build_gui()
         self.midi_message_loop()
 
-    def build_gui(self):
+    def build_gui(self):        
         self.root = tkinter.Tk()
         self.root.title('MIDI Notebook & Looper')
-        self.root.wm_iconbitmap('favicon.ico')
+        self.root.wm_iconbitmap(os.path.join(os.path.dirname(sys.argv[0]), 'favicon.ico'))
 
         # menu
         self.menubar = tkinter.Menu(self.root)
@@ -175,7 +176,7 @@ class Recorder(threading.Thread):
 
 def main():
     context = MidiNotebookContext(CONFIGURATION)  # init
-    APP = Application(context)
+    app = Application(context)
 
     for arg in sys.argv[1:]:
         if arg.startswith("-in"):
@@ -186,6 +187,6 @@ def main():
     recorder = Recorder(context)
     recorder.daemon = True
     recorder.start()
-    APP.root.mainloop()
+    app.root.mainloop()
 
 main()
