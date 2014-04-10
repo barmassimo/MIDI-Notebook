@@ -200,7 +200,7 @@ class MidiNotebookContext(metaclass=MetaSingleton):
             selected = ""
             if n == self.input_port:
                 selected = " [SELECTED] "
-            self.write_message("({0}) {1}{2}".format(n, port_name, selected))
+            self.write_message("[{0}] {1}{2}".format(n, port_name.decode('utf-8'), selected))
 
         self.write_message("")
 
@@ -209,7 +209,7 @@ class MidiNotebookContext(metaclass=MetaSingleton):
             selected = ""
             if n == self.output_port:
                 selected = " [SELECTED] "
-            self.write_message("({0}) {1}{2}".format(n, port_name, selected))
+            self.write_message("[{0}] {1}{2}".format(n, port_name.decode('utf-8'), selected))
 
         self.write_message("")
 

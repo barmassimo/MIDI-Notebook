@@ -63,7 +63,7 @@ class Application():
         self.output_port.set(self.context.output_port)
 
         for n, port_name in enumerate(self.context.get_output_ports()):
-            ports.add_radiobutton(label=port_name, variable=self.output_port,
+            ports.add_radiobutton(label="[{0}] {1}".format(n, port_name.decode('utf-8')), variable=self.output_port,
                                   value=n, command=functools.partial(self.set_output_port, value=n))
 
         self.tools.add_cascade(label="Select MIDI out port", menu=ports)
