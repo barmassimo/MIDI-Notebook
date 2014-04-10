@@ -45,35 +45,37 @@ class Application():
         self.build_gui()
         self.midi_message_loop()
 
-    def build_gui(self):        
+    def build_gui(self):
         self.root = tkinter.Tk()
         self.root.title('MIDI Notebook & Looper')
-        self.root.wm_iconbitmap(os.path.join(os.path.dirname(sys.argv[0]), 'favicon.ico'))
+        self.root.wm_iconbitmap(
+            os.path.join(os.path.dirname(sys.argv[0]), 'favicon.ico'))
 
         # menu
         self.menubar = tkinter.Menu(self.root)
         # self.menubar.add_command(label="Quit!", command=self.root.quit)
         self.tools = tkinter.Menu(self.menubar, tearoff=0)
-        self.tools.add_command(label="Save MIDI file", command=self.save, accelerator="Ctrl+S")
-        
+        self.tools.add_command(
+            label="Save MIDI file", command=self.save, accelerator="Ctrl+S")
+
         ports = tkinter.Menu(self.tools, tearoff=0)
         self.output_port = tkinter.IntVar()
-        self.output_port.set(self.context.output_port) 
-        
+        self.output_port.set(self.context.output_port)
+
         for n, port_name in enumerate(self.context.get_output_ports()):
-            ports.add_radiobutton(label=port_name, variable=self.output_port, value=n, command=functools.partial(self.set_output_port, value=n))
-     
-        
+            ports.add_radiobutton(label=port_name, variable=self.output_port,
+                                  value=n, command=functools.partial(self.set_output_port, value=n))
+
         self.tools.add_cascade(label="Select MIDI out port", menu=ports)
-                               
-                               
+
         self.tools.add_command(label="Reset song and loops",
-                               command=self.clean_all)              
+                               command=self.clean_all)
         self.tools.add_separator()
-        self.tools.add_command(label="Exit", command=self.root.quit, accelerator="Ctrl+Q")
+        self.tools.add_command(
+            label="Exit", command=self.root.quit, accelerator="Ctrl+Q")
         self.menubar.add_cascade(label="Tools", menu=self.tools)
         self.root.config(menu=self.menubar)
-        
+
         self.root.bind_all("<Control-q>", self.quit)
         self.root.bind_all("<Control-s>", self.save)
 
@@ -109,7 +111,7 @@ class Application():
 
         self.default_button_colors = (self.loop_buttons[0]['fg'],
                                       self.loop_buttons[0]['bg'])
-                                      
+
         self.record_button_colors = ('red', 'white')
 
     def midi_message_loop(self):
@@ -119,8 +121,8 @@ class Application():
                                 self.default_button_colors[::-1]]
 
         self.record_colors = [self.record_button_colors,
-                                self.record_button_colors[::-1]]
-                                
+                              self.record_button_colors[::-1]]
+
         self.update_lock.acquire()
         while len(self.update_messages) > 0:
             msg = self.update_messages.pop(0)
@@ -132,12 +134,12 @@ class Application():
             self.loop_status_lbl[n].set(l.status)
             if l.is_recording and l.start_recording_time is None:
                 self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'], =\
-                        self.record_colors[self.blink][0],\
-                        self.record_colors[self.blink][1]
+                    self.record_colors[self.blink][0],\
+                    self.record_colors[self.blink][1]
             elif l.is_recording:
                 self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'], =\
-                        self.record_button_colors[1],\
-                        self.record_button_colors[0]
+                    self.record_button_colors[1],\
+                    self.record_button_colors[0]
             elif l.is_playback:
                 if l.waiting_for_sync:
                     self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'] =\
@@ -158,7 +160,7 @@ class Application():
 
     def save(self, unused=None):
         self.context.save_midi_file()
-        
+
     def quit(self, unused):
         self.root.quit()
 
@@ -167,7 +169,7 @@ class Application():
 
     def loop(self, n):
         self.context.toggle_loop(n)
-        
+
     def set_output_port(self, value):
         self.context.output_port = value
 
@@ -191,14 +193,13 @@ class Recorder(threading.Thread):
 
 def main():
     context = MidiNotebookContext(CONFIGURATION)  # init
-    
 
     for arg in sys.argv[1:]:
         if arg.startswith("-in"):
             context.input_port = int(arg[3:])
         if arg.startswith("-out"):
             context.output_port = int(arg[4:])
-            
+
     app = Application(context)
 
     recorder = Recorder(context)

@@ -7,6 +7,7 @@ import sys
 import rtmidi_python as rtmidi
 from midiutil.MidiFile3 import MIDIFile
 
+
 class Loop():
 
     def __init__(self):
@@ -88,7 +89,7 @@ class LoopPlayer(threading.Thread):
             if self.context.output_port is None:
                 self.context.write_message("Please select a MIDI output port.")
                 return
-                
+
             self.context.midi_out = rtmidi.MidiOut()
             self.context.midi_out.open_port(self.context.output_port)
 
@@ -232,19 +233,20 @@ class MidiNotebookContext(metaclass=MetaSingleton):
         midi_out = rtmidi.MidiOut()
         ports = midi_out.ports
         return ports
-    
+
     @property
     def output_port(self):
         return self._output_port
-    
+
     @output_port.setter
     def output_port(self, value):
         self.write_message("Setting MIDI output port to {0}.".format(value))
-        
-        for n in range(self.n_loops)[::-1]: # ensure loop 0 stopped after the others
+
+        # ensure loop 0 stopped after the others
+        for n in range(self.n_loops)[::-1]:
             if self.loops[n].is_playback:
                 self.stop_loop(n)
-                
+
         self._output_port = value
         if self.midi_out is not None:
             self.midi_out.close_port()
@@ -343,14 +345,14 @@ class MidiNotebookContext(metaclass=MetaSingleton):
                 return
 
         message_for_midi_export = message[:]
-        
+
         # adjusting loopback messages timing
         time_stamp_for_midi_export = time.time() - self.last_event
 
         if len(self.messages_captured) == 0:
             time_stamp = 0
             time_stamp_for_midi_export = 0
-                
+
         self.last_event = time.time()
 
         message.append(time_stamp)
