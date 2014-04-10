@@ -53,11 +53,21 @@ class Application():
 
         # menu
         self.menubar = tkinter.Menu(self.root)
-        # self.menubar.add_command(label="Quit!", command=self.root.quit)
-        self.tools = tkinter.Menu(self.menubar, tearoff=0)
-        self.tools.add_command(
-            label="Save MIDI file", command=self.save, accelerator="Ctrl+S")
 
+        # menu/file
+        self.file = tkinter.Menu(self.menubar, tearoff=0)
+        
+        self.file.add_command(
+            label="Save MIDI file", command=self.save, accelerator="Ctrl+S")
+            
+        self.file.add_separator()
+        
+        self.file.add_command(
+            label="Exit", command=self.root.quit, accelerator="Ctrl+Q")
+        
+        # menu/tools
+        self.tools = tkinter.Menu(self.menubar, tearoff=0)
+            
         ports = tkinter.Menu(self.tools, tearoff=0)
         self.output_port = tkinter.IntVar()
         self.output_port.set(self.context.output_port)
@@ -67,12 +77,11 @@ class Application():
                                   value=n, command=functools.partial(self.set_output_port, value=n))
 
         self.tools.add_cascade(label="Select MIDI out port", menu=ports)
-
+        
         self.tools.add_command(label="Reset song and loops",
                                command=self.clean_all)
-        self.tools.add_separator()
-        self.tools.add_command(
-            label="Exit", command=self.root.quit, accelerator="Ctrl+Q")
+        
+        self.menubar.add_cascade(label="File", menu=self.file)
         self.menubar.add_cascade(label="Tools", menu=self.tools)
         self.root.config(menu=self.menubar)
 
