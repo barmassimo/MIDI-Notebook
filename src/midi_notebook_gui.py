@@ -163,7 +163,8 @@ class Application():
         self.midi_config_changing = True
 
     def update_midi_config(self, n, evt):
-        self.context.loop_toggle_message_signature[n] = [self.loop_midi_ccn[n].get(), self.loop_midi_values[n].get()]
+        self.context.loop_toggle_message_signature[n] = [
+            self.loop_midi_ccn[n].get(), self.loop_midi_values[n].get()]
         self.midi_config_changing = False
         conf = Configuration()
         conf.write(self.context)

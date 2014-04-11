@@ -2,6 +2,7 @@ import os
 import sys
 import configparser
 
+
 class Configuration():
 
     CONFIG_FILE_NAME = "midi_notebook.config"
