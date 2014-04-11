@@ -16,13 +16,21 @@ class Configuration():
         if not os.path.isfile(self.config_file_path):
             return
 
-        config = configparser.RawConfigParser()
+        config = configparser.SafeConfigParser()
         config.read(self.config_file_path)
 
-        context.input_port = config.getint('MIDI_PORTS', 'input')
-        context.output_port = config.getint('MIDI_PORTS', 'output')
+        context.input_port = None
+        context.input_port = None
 
-        config.getint('MIDI_PORTS', 'output')
+        try:
+            context.input_port = config.getint('MIDI_PORTS', 'input')
+        except ValueError:
+            pass
+
+        try:
+            context.output_port = config.getint('MIDI_PORTS', 'output')
+        except ValueError:
+            pass
 
         for n in range(context.n_loops):
             context.loop_toggle_message_signature[n] =\
@@ -36,13 +44,12 @@ class Configuration():
 
     def write(self, context):
         config = configparser.ConfigParser()
-        config['MIDI_PORTS'] = {
-            'input': context.input_port,
-            'output': context.output_port,
-        }
+
+        config['MIDI_PORTS'] = {}
+        config['MIDI_PORTS']['input'] = str(context.input_port)
+        config['MIDI_PORTS']['output'] = str(context.output_port)
 
         config['LOOP_MIDI_TRIGGERS'] = {}
-
         for n, signature in enumerate(context.loop_toggle_message_signature):
             config['LOOP_MIDI_TRIGGERS'][
                 'loop_{0}_ccn'.format(n)] = str(signature[1])

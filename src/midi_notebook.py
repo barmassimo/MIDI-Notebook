@@ -23,7 +23,7 @@ configuration = {
 
 def signal_handler(signal, frame):
     MidiNotebookContext().save_midi_file()
-    print('Bye.')
+    MidiNotebookContext().write_message('Bye.')
     sys.exit(0)
 
 
@@ -40,7 +40,7 @@ def main():
     context.start_recording()
 
     signal.signal(signal.SIGINT, signal_handler)
-    print('Press Ctrl+C to save and exit.')
+    context.write_message('Press Ctrl+C to save and exit.')
 
     context.start_main_loop()
 

@@ -236,9 +236,9 @@ class Application():
         self.context.toggle_loop(n)
 
     def set_output_port(self, value):
+        self.context.output_port = value
         conf = Configuration()
         conf.write(self.context)
-        self.context.output_port = value
 
     def write_txt(self, txt):
         self.update_lock.acquire()
