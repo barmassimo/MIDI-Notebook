@@ -6,6 +6,7 @@ import os
 import functools
 import tkinter
 from midi_notebook.midi_notebook_context import MidiNotebookContext
+from midi_notebook.midi_notebook_config import Configuration
 
 CONFIGURATION = {
 
@@ -24,7 +25,8 @@ CONFIGURATION = {
 
     # signatures for loop control special messages
     'loop_toggle_message_signature':
-    [[176, 21, 127], [176, 22, 127], [176, 23, 127], [176, 24, 127], ],
+    [[MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 21, 127], [MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 22, 127], [
+        MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 23, 127], [MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 24, 127], ],
 }
 # /CONFIGURATION
 
@@ -41,6 +43,7 @@ class Application():
 
         self.update_lock = threading.Lock()
         self.update_messages = []
+        self.midi_config_changing = False
 
         self.build_gui()
         self.midi_message_loop()
@@ -56,18 +59,18 @@ class Application():
 
         # menu/file
         self.file = tkinter.Menu(self.menubar, tearoff=0)
-        
+
         self.file.add_command(
             label="Save MIDI file", command=self.save, accelerator="Ctrl+S")
-            
+
         self.file.add_separator()
-        
+
         self.file.add_command(
             label="Exit", command=self.root.quit, accelerator="Ctrl+Q")
-        
+
         # menu/tools
         self.tools = tkinter.Menu(self.menubar, tearoff=0)
-            
+
         ports = tkinter.Menu(self.tools, tearoff=0)
         self.output_port = tkinter.IntVar()
         self.output_port.set(self.context.output_port)
@@ -77,10 +80,10 @@ class Application():
                                   value=n, command=functools.partial(self.set_output_port, value=n))
 
         self.tools.add_cascade(label="Select MIDI out port", menu=ports)
-        
+
         self.tools.add_command(label="Reset song and loops",
                                command=self.clean_all)
-        
+
         self.menubar.add_cascade(label="File", menu=self.file)
         self.menubar.add_cascade(label="Tools", menu=self.tools)
         self.root.config(menu=self.menubar)
@@ -92,23 +95,21 @@ class Application():
         self.root.rowconfigure(0, weight=1)
         self.root.rowconfigure(1, weight=0, minsize=2)
         self.root.rowconfigure(2, weight=0, minsize=140)
+        self.root.rowconfigure(3, weight=0, minsize=2)
 
-        self.txt = tkinter.Text(self.root, height='20')
-        self.txt.grid(row=0, column=0, columnspan=self.context.n_loops + 1,
+        self.txt = tkinter.Text(self.root, height='20', width='90')
+        self.txt.grid(row=0, column=0, columnspan=self.context.n_loops,
                       sticky=tkinter.W + tkinter.E + tkinter.N + tkinter.S)
 
         self.loop_buttons = []
         self.loop_status_lbl = []
+        self.loop_midi_ccn = []
+        self.loop_midi_values = []
+
         for n in range(0, self.context.n_loops):
             loop_n = functools.partial(self.loop, n)
 
-            btn = tkinter.Button(self.root, command=loop_n, text='\nLoop ' +
-                                 str(n) + ("\n- master -" if n == 0 else "\n"))
-            self.loop_buttons.append(btn)
-            btn.config(font='bold')
-            btn.grid(row=2, column=n,
-                     sticky=tkinter.W + tkinter.E + tkinter.N + tkinter.S)
-
+            # status
             var = tkinter.StringVar()
             lbl = tkinter.Label(self.root, height='1',
                                 width=1, textvariable=var)
@@ -116,12 +117,59 @@ class Application():
             lbl.grid(row=1, column=n,
                      sticky=tkinter.W + tkinter.E + tkinter.N + tkinter.S)
 
+            # big button
+            btn = tkinter.Button(self.root, command=loop_n, text='\nLoop ' +
+                                 str(n) + ("\n- master -" if n == 0 else "\n"))
+
+            self.loop_buttons.append(btn)
+            btn.config(font='bold')
+            btn.grid(row=2, column=n,
+                     sticky=tkinter.W + tkinter.E + tkinter.N + tkinter.S)
+
+            # MIDI ccn and val
+            frame = tkinter.Frame(self.root)
+
+            tkinter.Label(frame, text="MIDI CCn").pack(side=tkinter.LEFT)
+
+            intVar = tkinter.IntVar()
+            intVar.set(0)
+            self.loop_midi_ccn.append(intVar)
+            entry = tkinter.Entry(frame, textvariable=intVar, width=4)
+            entry.pack(side=tkinter.LEFT)
+            entry.bind('<Key>', self.updating_midi_config)
+            entry.bind(
+                '<FocusOut>', functools.partial(self.update_midi_config, n))
+
+            tkinter.Label(frame, text="Val").pack(side=tkinter.LEFT)
+
+            intVar = tkinter.IntVar()
+            intVar.set(0)
+            self.loop_midi_values.append(intVar)
+            entry = tkinter.Entry(frame, textvariable=intVar, width=4)
+            entry.pack(side=tkinter.LEFT)
+            entry.bind('<Key>', self.updating_midi_config)
+            entry.bind(
+                '<FocusOut>', functools.partial(self.update_midi_config, n))
+
+            frame.grid(row=3, column=n, sticky=tkinter.E + tkinter.W)
+
             self.root.columnconfigure(n, weight=1)
 
         self.default_button_colors = (self.loop_buttons[0]['fg'],
                                       self.loop_buttons[0]['bg'])
 
         self.record_button_colors = ('red', 'white')
+
+    def updating_midi_config(self, evt):
+        self.midi_config_changing = True
+
+    def update_midi_config(self, n, evt):
+        self.context.loop_toggle_message_signature[n] =\
+            [MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE,
+                self.loop_midi_ccn[n].get(), self.loop_midi_values[n].get()]
+        self.midi_config_changing = False
+        conf = Configuration()
+        conf.write(self.context)
 
     def midi_message_loop(self):
         self.blink = 1 - self.blink
@@ -140,6 +188,7 @@ class Application():
         self.update_lock.release()
 
         for n, l in enumerate(self.context.loops):
+            # status and blinking
             self.loop_status_lbl[n].set(l.status)
             if l.is_recording and l.start_recording_time is None:
                 self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'], =\
@@ -163,6 +212,13 @@ class Application():
                     fg=self.default_button_colors[0],
                     bg=self.default_button_colors[1])
 
+            # MIDI ccn and values config
+            if not self.midi_config_changing:
+                self.loop_midi_ccn[n].set(
+                    self.context.loop_toggle_message_signature[n][1])
+                self.loop_midi_values[n].set(
+                    self.context.loop_toggle_message_signature[n][2])
+
         self.root.update()
 
         self.root.after(300, self.midi_message_loop)
@@ -180,6 +236,8 @@ class Application():
         self.context.toggle_loop(n)
 
     def set_output_port(self, value):
+        conf = Configuration()
+        conf.write(self.context)
         self.context.output_port = value
 
     def write_txt(self, txt):
@@ -195,13 +253,17 @@ class Recorder(threading.Thread):
         self.context = context
 
     def run(self):
-        self.context.print_info()
+        self.context.print_info(show_usage=False)
         self.context.start_recording()
         self.context.start_main_loop()
 
 
 def main():
     context = MidiNotebookContext(CONFIGURATION)  # init
+
+    # read config if exists
+    conf = Configuration()
+    conf.read(context)
 
     for arg in sys.argv[1:]:
         if arg.startswith("-in"):

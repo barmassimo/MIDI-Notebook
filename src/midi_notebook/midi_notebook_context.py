@@ -194,13 +194,17 @@ class MidiNotebookContext(metaclass=MetaSingleton):
         if (self.write_message_function is not None):
             self.write_message_function(message)
 
-    def print_info(self):
+    def print_info(self, show_usage=True):
         self.write_message("MIDI IN PORTS:")
         for n, port_name in enumerate(self.get_input_ports()):
             selected = ""
             if n == self.input_port:
                 selected = " [SELECTED] "
-            self.write_message("[{0}] {1}{2}".format(n, port_name.decode('utf-8'), selected))
+            self.write_message(
+                "[{0}] {1}{2}".format(n, port_name.decode('utf-8'), selected))
+
+        if self.input_port is None:
+            self.write_message("Recording from ALL MIDI ports.")
 
         self.write_message("")
 
@@ -209,18 +213,21 @@ class MidiNotebookContext(metaclass=MetaSingleton):
             selected = ""
             if n == self.output_port:
                 selected = " [SELECTED] "
-            self.write_message("[{0}] {1}{2}".format(n, port_name.decode('utf-8'), selected))
+            self.write_message(
+                "[{0}] {1}{2}".format(n, port_name.decode('utf-8'), selected))
+
+        if self.output_port is None:
+            self.write_message("None selected.")
 
         self.write_message("")
 
-        if self.input_port is None:
+        if show_usage:
             self.write_message(
                 "Usage: {0} [-inPORT] [-outPORT]".format(os.path.basename(sys.argv[0])))
-            self.write_message("Recording from ALL MIDI ports.")
             self.write_message(
-                "If you want to record from only one port, you can provide a -inPORT number.")
+                "-inPORT: Record only from the specified port (default: ALL).")
             self.write_message(
-                "If you want to use playback (loop), use -outPORT number.")
+                "-outPORT: Port for playback/loop (default: NONE).")
 
         self.write_message("")
 

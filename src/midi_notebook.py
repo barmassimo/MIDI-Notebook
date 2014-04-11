@@ -15,7 +15,8 @@ configuration = {
     'monitor': True,  # print input midi messages
     'write_message_function': print,  # loggin function
     'loop_toggle_message_signature':
-    [[176, 21, 127], [176, 22, 127], [176, 23, 127], [176, 24, 127], ],
+    [[MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 21, 127], [MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 22, 127], [
+        MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 23, 127], [MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 24, 127], ],
 }
 # /CONFIGURATION
 
@@ -29,12 +30,11 @@ def signal_handler(signal, frame):
 def main():
     context = MidiNotebookContext(configuration)  # init
 
-    input_port = None
     for arg in sys.argv[1:]:
         if arg.startswith("-in"):
-            input_port = int(arg[3:])
-
-    context.input_port = input_port
+            context.input_port = int(arg[3:])
+        if arg.startswith("-out"):
+            context.output_port = int(arg[4:])
 
     context.print_info()
     context.start_recording()
