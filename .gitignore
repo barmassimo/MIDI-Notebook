@@ -2,3 +2,5 @@
 *.mid
 midi_notebook.config
 /untracked
+/main_gui.bat
+/main.bat
