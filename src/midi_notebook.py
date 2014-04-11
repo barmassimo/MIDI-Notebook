@@ -15,8 +15,7 @@ configuration = {
     'monitor': True,  # print input midi messages
     'write_message_function': print,  # loggin function
     'loop_toggle_message_signature':
-    [[MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 21, 127], [MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 22, 127], [
-        MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 23, 127], [MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 24, 127], ],
+    [[21, 127], [22, 127], [23, 127], [24, 127], ],
 }
 # /CONFIGURATION
 

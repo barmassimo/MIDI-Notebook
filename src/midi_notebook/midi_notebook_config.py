@@ -1,8 +1,6 @@
 import os
 import sys
 import configparser
-from .midi_notebook_context import MidiNotebookContext
-
 
 class Configuration():
 
@@ -35,7 +33,6 @@ class Configuration():
         for n in range(context.n_loops):
             context.loop_toggle_message_signature[n] =\
                 [
-                    MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE,
                     config.getint(
                         'LOOP_MIDI_TRIGGERS', 'loop_{0}_ccn'.format(n)),
                     config.getint(
@@ -52,9 +49,9 @@ class Configuration():
         config['LOOP_MIDI_TRIGGERS'] = {}
         for n, signature in enumerate(context.loop_toggle_message_signature):
             config['LOOP_MIDI_TRIGGERS'][
-                'loop_{0}_ccn'.format(n)] = str(signature[1])
+                'loop_{0}_ccn'.format(n)] = str(signature[0])
             config['LOOP_MIDI_TRIGGERS'][
-                'loop_{0}_value'.format(n)] = str(signature[2])
+                'loop_{0}_value'.format(n)] = str(signature[1])
 
         with open(self.config_file_path, 'w') as config_file:
             config.write(config_file)

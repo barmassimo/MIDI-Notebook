@@ -153,8 +153,7 @@ class MidiNotebookContext(metaclass=MetaSingleton):
         self.monitor = configuration['monitor']
         self.write_message_function = configuration.get(
             'write_message_function', None)
-        self.loop_toggle_message_signature = configuration[
-            'loop_toggle_message_signature']
+        self.loop_toggle_message_signature = configuration['loop_toggle_message_signature']
 
         self.last_event = time.time()
         self.messages_captured = []
@@ -344,14 +343,11 @@ class MidiNotebookContext(metaclass=MetaSingleton):
 
     def check_loop_toggle_message_signature(self, message, n):
         signature = self.loop_toggle_message_signature[n]
-        if len(message) < len(signature):
-            return False
-
-        for n2 in range(len(signature)):
-            if message[n2] != signature[n2]:
-                return False
-
-        return True
+        
+        if message[:3] == [MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, signature[0], signature[1]]:
+            return True
+        
+        return False
 
     def capture_message(self, message, time_stamp, loopback=False):
 

@@ -25,8 +25,7 @@ CONFIGURATION = {
 
     # signatures for loop control special messages
     'loop_toggle_message_signature':
-    [[MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 21, 127], [MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 22, 127], [
-        MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 23, 127], [MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE, 24, 127], ],
+    [[21, 127], [22, 127], [23, 127], [24, 127], ],
 }
 # /CONFIGURATION
 
@@ -50,7 +49,7 @@ class Application():
 
     def build_gui(self):
         self.root = tkinter.Tk()
-        self.root.title('MIDI Notebook & Looper')
+        self.root.title('MIDI Notebook')
         self.root.wm_iconbitmap(
             os.path.join(os.path.dirname(sys.argv[0]), 'favicon.ico'))
 
@@ -164,9 +163,7 @@ class Application():
         self.midi_config_changing = True
 
     def update_midi_config(self, n, evt):
-        self.context.loop_toggle_message_signature[n] =\
-            [MidiNotebookContext.MidiEventTypes.CONTROL_CHANGE,
-                self.loop_midi_ccn[n].get(), self.loop_midi_values[n].get()]
+        self.context.loop_toggle_message_signature[n] = [self.loop_midi_ccn[n].get(), self.loop_midi_values[n].get()]
         self.midi_config_changing = False
         conf = Configuration()
         conf.write(self.context)
@@ -215,9 +212,9 @@ class Application():
             # MIDI ccn and values config
             if not self.midi_config_changing:
                 self.loop_midi_ccn[n].set(
-                    self.context.loop_toggle_message_signature[n][1])
+                    self.context.loop_toggle_message_signature[n][0])
                 self.loop_midi_values[n].set(
-                    self.context.loop_toggle_message_signature[n][2])
+                    self.context.loop_toggle_message_signature[n][1])
 
         self.root.update()
 
