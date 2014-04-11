@@ -248,6 +248,10 @@ class MidiNotebookContext(metaclass=MetaSingleton):
     @output_port.setter
     def output_port(self, value):
         self.write_message("Setting MIDI output port to {0}.".format(value))
+        
+        if value is not None and value >= len(self.get_output_ports()):
+            self.write_message("MIDI out port {0} is invalid: stoppung output.".format(value))
+            value = None
 
         # ensure loop 0 stopped after the others
         for n in range(self.n_loops)[::-1]:
@@ -261,7 +265,12 @@ class MidiNotebookContext(metaclass=MetaSingleton):
 
     def start_recording(self):
         if self.input_port is not None:
-            self._start_recording_from_port(self.input_port)
+            if self.input_port >= len(self.get_input_ports()):
+                self.write_message("MIDI in port {0} is invalid: using all ports.".format(self.input_port))
+                self.input_port = None
+                self.start_recording()
+            else:
+                self._start_recording_from_port(self.input_port)
         else:
             for n in range(len(self.get_input_ports())):
                 self._start_recording_from_port(n)
