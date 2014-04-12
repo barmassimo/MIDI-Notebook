@@ -110,7 +110,7 @@ class Application():
         self.root.rowconfigure(2, weight=0, minsize=140)
         self.root.rowconfigure(3, weight=0, minsize=2)
 
-        self.txt = tkinter.Text(self.root, height='20', width='90')
+        self.txt = tkinter.Text(self.root, height='20', width='90', bg='black', fg='green')
         self.txt.grid(row=0, column=0, columnspan=self.context.n_loops,
                       sticky=tkinter.W + tkinter.E + tkinter.N + tkinter.S)
 
