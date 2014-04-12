@@ -1,4 +1,4 @@
-# MIDI-Notebook - A MIDI monitor, looper, and recorder written in Python.
+# MIDI-Notebook - A prototypal MIDI monitor, looper, and recorder written in Python.
 # Copyright (C) 2014 Massimo Barbieri - http://www.massimobarbieri.it
 #
 # This program is free software: you can redistribute it and/or modify

@@ -1,6 +1,6 @@
 MIDI-Notebook
 =============
-_A MIDI monitor, looper, and recorder written in Python._
+_A prototypal MIDI monitor, looper, and recorder written in Python._
 
 ## License:
 GNU GENERAL PUBLIC LICENSE V 3
