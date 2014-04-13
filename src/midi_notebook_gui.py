@@ -125,7 +125,7 @@ class Application():
             btn = tkinter.Button(self.root, command=loop_n)
 
             self.loop_buttons.append(btn)
-            btn.config(font='bold')
+            btn.config(font=("Helvetica", 12))
             btn.grid(row=1, column=n,
                      sticky=tkinter.W + tkinter.E + tkinter.N + tkinter.S)
 
