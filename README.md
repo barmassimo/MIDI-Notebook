@@ -11,4 +11,6 @@ GNU GENERAL PUBLIC LICENSE V 3
 * [MIDIUtil 0.89](http://code.google.com/p/midiutil)
 
 ## About me
-[massimobarbieri.it](http://www.massimobarbieri.it)  
+[massimobarbieri.it](http://www.massimobarbieri.it)
+
+![screenshot](http://www.massimobarbieri.it/DjangoLab/ss_midi_notebook001.png)
