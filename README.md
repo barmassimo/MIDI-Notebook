@@ -11,9 +11,7 @@ It seems that some dependencies aren't available via PIP - sorry about that, you
 
 If you have trouble, please contact me, an all-in-one executable version is available on request.
 
-Todo: MIDI clock support; better GUI with another toolkit.
-
-![screenshot](http://www.massimobarbieri.it/DjangoLab/ss_midi_notebook002.png)
+![screenshot](http://www.massimobarbieri.it/DjangoLab/ss_midi_notebook001.png)
 
 ## License
 GNU GENERAL PUBLIC LICENSE V 3
@@ -22,6 +20,10 @@ GNU GENERAL PUBLIC LICENSE V 3
 * Python 3.x
 * [rtmidi-python 0.2.2](https://pypi.python.org/pypi/rtmidi-python)
 * [MIDIUtil 0.89](http://code.google.com/p/midiutil)
+
+## Todo
+* MIDI clock support
+* Better GUI with another toolkit
 
 ## About me
 [massimobarbieri.it](http://www.massimobarbieri.it)
