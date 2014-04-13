@@ -464,7 +464,7 @@ class MidiNotebookContext(metaclass=MetaSingleton):
                         message_position = n
 
             self.write_midi_message(
-                message, message_position, loop_index == None)
+                message, message_position, loop_index is None)
 
         for n in range(self.n_loops):
             if loop_index is None and self.loops[n].is_recording:
