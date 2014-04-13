@@ -130,7 +130,7 @@ class LoopPlayer(threading.Thread):
         self.loop_index = n
         self.is_master_loop = n == 0
         self.force_exit_activated = False
-        
+
     def run(self):
 
         # avoid concurrency
@@ -185,7 +185,8 @@ class LoopPlayer(threading.Thread):
 
                 if self.loop.is_playback:
                     self.context.midi_out.send_message(m)
-                    self.context.capture_message(m, loop_index=self.loop_index)  # loopback!
+                    self.context.capture_message(
+                        m, loop_index=self.loop_index)  # loopback!
 
             time.sleep(loop_duration - total_time)
 
@@ -252,16 +253,17 @@ class MidiNotebookContext(metaclass=MetaSingleton):
     def write_message(self, message):
         if (self.write_message_function is not None):
             self.write_message_function(message)
-            
+
     def write_midi_message(self, message, position, recording):
 
-        result='  '
+        result = '  '
         for n in range(self.n_loops):
             if n == position:
-                result += (' {0}{1:<19}|'.format('*' if recording else ' ', message))
+                result += (' {0}{1:<19}|'.format('*' if recording else ' ',
+                           message))
             else:
                 result += ('  {0:<19}|'.format(''))
-        
+
         self.write_message(result)
 
     def print_info(self, show_usage=True):
@@ -354,7 +356,7 @@ class MidiNotebookContext(metaclass=MetaSingleton):
         self.midi_in_ports.append(midi_in)
 
     def start_loop_recording(self, n):
-                    
+
         # one loop a time
         for l in self.loops:
             l.stop_recording()
@@ -363,11 +365,11 @@ class MidiNotebookContext(metaclass=MetaSingleton):
         if not self.loop_threads[n] is None:
             self.loop_threads[n].force_exit()
 
-        if n==0:
+        if n == 0:
             self.clean_loop(n)
             for n_loop in range(1, self.n_loops):
                 self.stop_loop(n_loop)
-        
+
         self.loops[n].start_recording()
 
     def stop_loop_recording(self, n):
@@ -452,17 +454,18 @@ class MidiNotebookContext(metaclass=MetaSingleton):
 
         self.messages_captured.append(message_for_midi_export)
 
-        if self.monitor: 
+        if self.monitor:
             message_position = 0
-            if loop_index is not None: 
+            if loop_index is not None:
                 message_position = loop_index
             else:
                 for n in range(self.n_loops):
                     if self.loops[n].is_recording:
                         message_position = n
-                
-            self.write_midi_message(message, message_position, loop_index==None)
-            
+
+            self.write_midi_message(
+                message, message_position, loop_index == None)
+
         for n in range(self.n_loops):
             if loop_index is None and self.loops[n].is_recording:
                 self.handle_message_loop(message, n)

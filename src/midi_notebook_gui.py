@@ -106,37 +106,27 @@ class Application():
 
         # grid
         self.root.rowconfigure(0, weight=1)
-        self.root.rowconfigure(1, weight=0, minsize=2)
-        self.root.rowconfigure(2, weight=0, minsize=140)
-        self.root.rowconfigure(3, weight=0, minsize=2)
+        self.root.rowconfigure(1, weight=0, minsize=140)
+        self.root.rowconfigure(2, weight=0, minsize=2)
 
-        self.txt = tkinter.Text(self.root, height='20', width='90', bg='black', fg='green')
+        self.txt = tkinter.Text(
+            self.root, height='20', width='90', bg='black', fg='white')
         self.txt.grid(row=0, column=0, columnspan=self.context.n_loops,
                       sticky=tkinter.W + tkinter.E + tkinter.N + tkinter.S)
 
         self.loop_buttons = []
-        self.loop_status_lbl = []
         self.loop_midi_ccn = []
         self.loop_midi_values = []
 
         for n in range(0, self.context.n_loops):
             loop_n = functools.partial(self.loop, n)
 
-            # status
-            var = tkinter.StringVar()
-            lbl = tkinter.Label(self.root, height='1',
-                                width=1, textvariable=var)
-            self.loop_status_lbl.append(var)
-            lbl.grid(row=1, column=n,
-                     sticky=tkinter.W + tkinter.E + tkinter.N + tkinter.S)
-
             # big button
-            btn = tkinter.Button(self.root, command=loop_n, text='\nLoop ' +
-                                 str(n) + ("\n- master -" if n == 0 else "\n"))
+            btn = tkinter.Button(self.root, command=loop_n)
 
             self.loop_buttons.append(btn)
             btn.config(font='bold')
-            btn.grid(row=2, column=n,
+            btn.grid(row=1, column=n,
                      sticky=tkinter.W + tkinter.E + tkinter.N + tkinter.S)
 
             # MIDI ccn and val
@@ -164,7 +154,7 @@ class Application():
             entry.bind(
                 '<FocusOut>', functools.partial(self.update_midi_config, n))
 
-            frame.grid(row=3, column=n, sticky=tkinter.E + tkinter.W)
+            frame.grid(row=2, column=n, sticky=tkinter.E + tkinter.W)
 
             self.root.columnconfigure(n, weight=1)
 
@@ -201,7 +191,10 @@ class Application():
 
         for n, l in enumerate(self.context.loops):
             # status and blinking
-            self.loop_status_lbl[n].set(l.status)
+
+            self.loop_buttons[n][
+                'text'] = 'Loop ' + str(n) + (' master' if n == 0 else '') + '\n' + l.status
+
             if l.is_recording and l.start_recording_time is None:
                 self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'], =\
                     self.record_colors[self.blink][0],\
