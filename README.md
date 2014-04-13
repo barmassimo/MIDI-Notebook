@@ -15,8 +15,6 @@ Todo: MIDI clock support; better GUI with another toolkit.
 
 ![screenshot](http://www.massimobarbieri.it/DjangoLab/ss_midi_notebook001.png)
 
-Todo: MIDI clock support; better GUI with another toolkit.
-
 ## License
 GNU GENERAL PUBLIC LICENSE V 3
 
