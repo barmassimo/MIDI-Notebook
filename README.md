@@ -13,7 +13,7 @@ If you have trouble, please contact me, an all-in-one executable version is avai
 
 Todo: MIDI clock support; better GUI with another toolkit.
 
-![screenshot](http://www.massimobarbieri.it/DjangoLab/ss_midi_notebook001.png)
+![screenshot](http://www.massimobarbieri.it/DjangoLab/ss_midi_notebook002.png)
 
 ## License
 GNU GENERAL PUBLIC LICENSE V 3
