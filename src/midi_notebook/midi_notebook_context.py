@@ -256,7 +256,7 @@ class MidiNotebookContext(metaclass=MetaSingleton):
 
     def write_midi_message(self, message, position, recording):
 
-        result = '  '
+        result = ' '
         for n in range(self.n_loops):
             if n == position:
                 result += (' {0}{1:<19}|'.format('*' if recording else ' ',
