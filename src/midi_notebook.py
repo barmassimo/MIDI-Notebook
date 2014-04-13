@@ -14,15 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import threading
+"""MIDI Notebook command line interface."""
+
 import sys
-import time
 import signal
 
 from midi_notebook.midi_notebook_context import MidiNotebookContext
 
 # CONFIGURATION
-configuration = {
+CONFIGURATION = {
     # save automatically a new file if there are not new events for N seconds
     # (None  = no autosave)
     'long_pause': 60,
@@ -36,14 +36,14 @@ configuration = {
 # /CONFIGURATION
 
 
-def signal_handler(signal, frame):
+def cb_signal_handler(signal_sent, frame):
     MidiNotebookContext().save_midi_file()
     MidiNotebookContext().write_message('Bye.')
     sys.exit(0)
 
 
 def main():
-    context = MidiNotebookContext(configuration)  # init
+    context = MidiNotebookContext(CONFIGURATION)  # init
 
     for arg in sys.argv[1:]:
         if arg.startswith("-in"):
@@ -54,7 +54,7 @@ def main():
     context.print_info()
     context.start_recording()
 
-    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGINT, cb_signal_handler)
     context.write_message('Press Ctrl+C to save and exit.')
 
     context.start_main_loop()

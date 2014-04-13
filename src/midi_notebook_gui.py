@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""MIDI Notebook GUI."""
+
 import threading
 import sys
 import os
@@ -57,6 +59,14 @@ class Application():
         self.update_lock = threading.Lock()
         self.update_messages = []
         self.midi_config_changing = False
+        self.default_button_colors = None
+        self.record_button_colors = None
+        self.loop_buttons = []
+        self.loop_midi_ccn = []
+        self.loop_midi_values = []
+        self.root = None
+        self.output_port = None
+        self.txt = None
 
         self.build_gui()
         self.midi_message_loop()
@@ -67,42 +77,10 @@ class Application():
         self.root.wm_iconbitmap(
             os.path.join(os.path.dirname(sys.argv[0]), 'favicon.ico'))
 
-        # menu
-        self.menubar = tkinter.Menu(self.root)
+        self.root.config(menu=self.build_menu())
 
-        # menu/file
-        self.file = tkinter.Menu(self.menubar, tearoff=0)
-
-        self.file.add_command(
-            label="Save MIDI file", command=self.save, accelerator="Ctrl+S")
-
-        self.file.add_separator()
-
-        self.file.add_command(
-            label="Exit", command=self.root.quit, accelerator="Ctrl+Q")
-
-        # menu/tools
-        self.tools = tkinter.Menu(self.menubar, tearoff=0)
-
-        ports = tkinter.Menu(self.tools, tearoff=0)
-        self.output_port = tkinter.IntVar()
-        self.output_port.set(self.context.output_port)
-
-        for n, port_name in enumerate(self.context.get_output_ports()):
-            ports.add_radiobutton(label="[{0}] {1}".format(n, port_name.decode('utf-8')), variable=self.output_port,
-                                  value=n, command=functools.partial(self.set_output_port, value=n))
-
-        self.tools.add_cascade(label="Select MIDI out port", menu=ports)
-
-        self.tools.add_command(label="Reset song and loops",
-                               command=self.clean_all)
-
-        self.menubar.add_cascade(label="File", menu=self.file)
-        self.menubar.add_cascade(label="Tools", menu=self.tools)
-        self.root.config(menu=self.menubar)
-
-        self.root.bind_all("<Control-q>", self.quit)
-        self.root.bind_all("<Control-s>", self.save)
+        self.root.bind_all("<Control-q>", self.cb_quit)
+        self.root.bind_all("<Control-s>", self.cb_save)
 
         # grid
         self.root.rowconfigure(0, weight=1)
@@ -113,10 +91,6 @@ class Application():
             self.root, height='20', width='90', bg='black', fg='#33ff33')
         self.txt.grid(row=0, column=0, columnspan=self.context.n_loops,
                       sticky=tkinter.W + tkinter.E + tkinter.N + tkinter.S)
-
-        self.loop_buttons = []
-        self.loop_midi_ccn = []
-        self.loop_midi_values = []
 
         for n in range(0, self.context.n_loops):
             loop_n = functools.partial(self.loop, n)
@@ -139,9 +113,9 @@ class Application():
             self.loop_midi_ccn.append(intVar)
             entry = tkinter.Entry(frame, textvariable=intVar, width=4)
             entry.pack(side=tkinter.LEFT)
-            entry.bind('<Key>', self.updating_midi_config)
+            entry.bind('<Key>', self.cb_updating_midi_config)
             entry.bind(
-                '<FocusOut>', functools.partial(self.update_midi_config, n))
+                '<FocusOut>', functools.partial(self.cb_update_midi_config, n))
 
             tkinter.Label(frame, text="Val").pack(side=tkinter.LEFT)
 
@@ -150,9 +124,9 @@ class Application():
             self.loop_midi_values.append(intVar)
             entry = tkinter.Entry(frame, textvariable=intVar, width=4)
             entry.pack(side=tkinter.LEFT)
-            entry.bind('<Key>', self.updating_midi_config)
+            entry.bind('<Key>', self.cb_updating_midi_config)
             entry.bind(
-                '<FocusOut>', functools.partial(self.update_midi_config, n))
+                '<FocusOut>', functools.partial(self.cb_update_midi_config, n))
 
             frame.grid(row=2, column=n, sticky=tkinter.E + tkinter.W)
 
@@ -163,10 +137,46 @@ class Application():
 
         self.record_button_colors = ('red', 'white')
 
-    def updating_midi_config(self, evt):
+    def build_menu(self):
+        # menu
+        menubar = tkinter.Menu(self.root)
+
+        # menu/file
+        file = tkinter.Menu(menubar, tearoff=0)
+
+        file.add_command(
+            label="Save MIDI file", command=self.cb_save, accelerator="Ctrl+S")
+
+        file.add_separator()
+
+        file.add_command(
+            label="Exit", command=self.root.quit, accelerator="Ctrl+Q")
+
+        # menu/tools
+        tools = tkinter.Menu(menubar, tearoff=0)
+
+        ports = tkinter.Menu(tools, tearoff=0)
+        self.output_port = tkinter.IntVar()
+        self.output_port.set(self.context.output_port)
+
+        for n, port_name in enumerate(self.context.get_output_ports()):
+            ports.add_radiobutton(label="[{0}] {1}".format(n, port_name.decode('utf-8')), variable=self.output_port,
+                                  value=n, command=functools.partial(self.set_output_port, value=n))
+
+        tools.add_cascade(label="Select MIDI out port", menu=ports)
+
+        tools.add_command(label="Reset song and loops",
+                          command=self.clean_all)
+
+        menubar.add_cascade(label="File", menu=file)
+        menubar.add_cascade(label="Tools", menu=tools)
+
+        return menubar
+
+    def cb_updating_midi_config(self, evt):
         self.midi_config_changing = True
 
-    def update_midi_config(self, n, evt):
+    def cb_update_midi_config(self, n, evt):
         self.context.loop_toggle_message_signature[n] = [
             self.loop_midi_ccn[n].get(), self.loop_midi_values[n].get()]
         self.midi_config_changing = False
@@ -176,11 +186,11 @@ class Application():
     def midi_message_loop(self):
         self.blink = 1 - self.blink
 
-        self.playback_colors = [self.default_button_colors,
-                                self.default_button_colors[::-1]]
+        playback_colors = [self.default_button_colors,
+                           self.default_button_colors[::-1]]
 
-        self.record_colors = [self.record_button_colors,
-                              self.record_button_colors[::-1]]
+        record_colors = [self.record_button_colors,
+                         self.record_button_colors[::-1]]
 
         self.update_lock.acquire()
         while len(self.update_messages) > 0:
@@ -197,8 +207,8 @@ class Application():
 
             if l.is_recording and l.start_recording_time is None:
                 self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'], =\
-                    self.record_colors[self.blink][0],\
-                    self.record_colors[self.blink][1]
+                    record_colors[self.blink][0],\
+                    record_colors[self.blink][1]
             elif l.is_recording:
                 self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'], =\
                     self.record_button_colors[1],\
@@ -206,8 +216,8 @@ class Application():
             elif l.is_playback:
                 if l.waiting_for_sync:
                     self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'] =\
-                        self.playback_colors[self.blink][0],\
-                        self.playback_colors[self.blink][1]
+                        playback_colors[self.blink][0],\
+                        playback_colors[self.blink][1]
                 else:
                     self.loop_buttons[n]['fg'], self.loop_buttons[n]['bg'] =\
                         self.default_button_colors[1],\
@@ -228,10 +238,10 @@ class Application():
 
         self.root.after(300, self.midi_message_loop)
 
-    def save(self, unused=None):
+    def cb_save(self, unused=None):
         self.context.save_midi_file()
 
-    def quit(self, unused):
+    def cb_quit(self, unused):
         self.root.quit()
 
     def clean_all(self):
