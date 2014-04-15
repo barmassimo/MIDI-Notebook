@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 """MIDI Notebook GUI."""
 
 import threading
@@ -275,17 +276,16 @@ class Recorder(threading.Thread):
         self.context.start_main_loop()
 
 
-        
 def main():
     def cb_error_handler(type, value, tb):
         msg = repr(traceback.format_exception(type, value, tb))
         logging.error("Uncaught exception: {0}".format(msg))
-    
+
     log_path = os.path.join(os.path.dirname(sys.argv[0]), "midi_notebook.log")
     logging.basicConfig(filename=log_path, level=logging.DEBUG)
-    
+
     sys.excepthook = cb_error_handler
-    
+
     context = MidiNotebookContext(CONFIGURATION)  # init
 
     # read config if exists
@@ -306,4 +306,3 @@ def main():
     app.root.mainloop()
 
 main()
-

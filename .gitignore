@@ -1,8 +1,8 @@
 *.pyc
 *.mid
+/untracked
 midi_notebook.config
 midi_notebook.log
-/untracked
-/main_gui.bat
-/main.bat
-
+main.bat
+main_gui.bat
+autopep8.bat

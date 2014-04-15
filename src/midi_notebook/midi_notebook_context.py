@@ -130,7 +130,7 @@ class LoopPlayer(threading.Thread):
         self.loop_index = n
         self.is_master_loop = n == 0
         self.force_exit_activated = False
-            
+
     def run(self):
         try:
             self.run_unsafe()
