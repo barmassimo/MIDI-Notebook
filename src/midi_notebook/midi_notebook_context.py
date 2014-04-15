@@ -130,9 +130,14 @@ class LoopPlayer(threading.Thread):
         self.loop_index = n
         self.is_master_loop = n == 0
         self.force_exit_activated = False
-
+            
     def run(self):
+        try:
+            self.run_unsafe()
+        except Exception:
+            sys.excepthook(*sys.exc_info())
 
+    def run_unsafe(self):
         # avoid concurrency
         loop_messages_captured = self.loop.messages_captured[:]
         loop_duration = self.loop.duration

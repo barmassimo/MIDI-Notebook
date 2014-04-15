@@ -20,6 +20,8 @@ import threading
 import sys
 import os
 import functools
+import logging
+import traceback
 import tkinter
 from midi_notebook.midi_notebook_context import MidiNotebookContext
 from midi_notebook.midi_notebook_config import Configuration
@@ -273,7 +275,17 @@ class Recorder(threading.Thread):
         self.context.start_main_loop()
 
 
+        
 def main():
+    def cb_error_handler(type, value, tb):
+        msg = repr(traceback.format_exception(type, value, tb))
+        logging.error("Uncaught exception: {0}".format(msg))
+    
+    log_path = os.path.join(os.path.dirname(sys.argv[0]), "midi_notebook.log")
+    logging.basicConfig(filename=log_path, level=logging.DEBUG)
+    
+    sys.excepthook = cb_error_handler
+    
     context = MidiNotebookContext(CONFIGURATION)  # init
 
     # read config if exists
@@ -294,3 +306,4 @@ def main():
     app.root.mainloop()
 
 main()
+

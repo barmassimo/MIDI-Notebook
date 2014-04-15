@@ -1,6 +1,8 @@
 *.pyc
 *.mid
 midi_notebook.config
+midi_notebook.log
 /untracked
 /main_gui.bat
 /main.bat
+
