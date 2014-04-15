@@ -33,19 +33,21 @@ class Configuration():
 
         config = configparser.SafeConfigParser()
         config.read(self.config_file_path)
-
-        context.input_port = None
-        context.input_port = None
+        
+        try:
+            context.long_pause = config.getint('MAIN', 'auto_save_pause')
+        except ValueError:
+            context.long_pause = None        
 
         try:
             context.input_port = config.getint('MIDI_PORTS', 'input')
         except ValueError:
-            pass
+            context.input_port = None
 
         try:
             context.output_port = config.getint('MIDI_PORTS', 'output')
         except ValueError:
-            pass
+            context.output_port = None
 
         for n in range(context.n_loops):
             context.loop_toggle_message_signature[n] =\
@@ -56,9 +58,13 @@ class Configuration():
                         'LOOP_MIDI_TRIGGERS', 'loop_{0}_value'.format(n)),
                 ]
 
+
     def write(self, context):
         config = configparser.ConfigParser()
 
+        config['MAIN'] = {}
+        config['MAIN']['auto_save_pause'] = str(context.long_pause)
+        
         config['MIDI_PORTS'] = {}
         config['MIDI_PORTS']['input'] = str(context.input_port)
         config['MIDI_PORTS']['output'] = str(context.output_port)
