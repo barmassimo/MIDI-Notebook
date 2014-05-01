@@ -11,7 +11,7 @@ It seems that some dependencies aren't available via PIP - sorry about that, you
 
 If you have trouble, please contact me, an all-in-one executable version is available on request.
 
-![screenshot](http://www.massimobarbieri.it/DjangoLab/ss_midi_notebook001.png)
+![screenshot](http://www.massimobarbieri.it/it/DjangoLab/ss_midi_notebook001.png)
 
 ## Usage
 1. Select a MIDI out via menu
